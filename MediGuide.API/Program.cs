@@ -1,6 +1,6 @@
+using Scalar.AspNetCore;
 using MediGuide.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using MediGuide.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,10 +16,11 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi();   // serves /openapi/v1.json
+    app.MapScalarApiReference();    // serves the nice UI at /scalar
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.MapControllers();
 
 // Seed data in Development
