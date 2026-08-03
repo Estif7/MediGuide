@@ -134,4 +134,49 @@ public class BookingsController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    [HttpPatch("{id:guid}/assign")]
+    public async Task<ActionResult<BookingDto>> AssignAgent(Guid id, [FromBody] AssignAgentDto dto)
+    {
+        var booking = await _context.Bookings
+            .Include(b => b.Patient)
+            .Include(b => b.ServiceCategory)
+            .Include(b => b.Agent)
+            .FirstOrDefaultAsync(b => b.Id == id);
+
+        if (booking is null)
+            return NotFound("Booking not found.");
+
+        var agent = await _context.Agents.FindAsync(dto.AgentId);
+        if (agent is null || !agent.IsActive)
+            return BadRequest("Agent not found or inactive.");
+
+        if (!agent.IsAvailable)
+            return BadRequest("Agent is currently not available.");
+
+        booking.AgentId = agent.Id;
+        booking.Status = BookingStatus.Assigned;
+        booking.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        // Reload agent name for the response
+        await _context.Entry(booking).Reference(b => b.Agent).LoadAsync();
+
+        var result = new BookingDto(
+            booking.Id,
+            booking.PatientId,
+            booking.Patient.FullName,
+            booking.ServiceCategoryId,
+            booking.ServiceCategory.Name,
+            booking.AgentId,
+            booking.Agent?.FullName,
+            booking.ResponseTime,
+            booking.Status,
+            booking.Amount,
+            booking.Notes,
+            booking.CreatedAt);
+
+        return Ok(result);
+    }
 }
