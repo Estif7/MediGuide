@@ -1,9 +1,10 @@
 using MediGuide.Domain.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediGuide.Infrastructure.Persistence;
 
-public class MediGuideDbContext : DbContext
+public class MediGuideDbContext : IdentityDbContext<ApplicationUser>
 {
     public MediGuideDbContext(DbContextOptions<MediGuideDbContext> options)
         : base(options)
@@ -22,8 +23,6 @@ public class MediGuideDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        // Apply all configurations from this assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(MediGuideDbContext).Assembly);
     }
 }

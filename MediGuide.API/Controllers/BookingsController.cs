@@ -4,6 +4,7 @@ using MediGuide.Domain.Enums;
 using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MediGuide.API.Controllers;
 
@@ -73,6 +74,9 @@ public class BookingsController : ControllerBase
         return Ok(booking);
     }
 
+
+    [Authorize] 
+    // [Authorize(Roles = "Patient")]
     [HttpPost]
     public async Task<ActionResult<BookingDto>> Create(CreateBookingDto dto)
     {
