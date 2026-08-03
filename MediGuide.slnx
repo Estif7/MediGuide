@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="MediGuide.API/MediGuide.API.csproj" />
+  <Project Path="MediGuide.Application/MediGuide.Application.csproj" />
+  <Project Path="MediGuide.Domain/MediGuide.Domain.csproj" />
+  <Project Path="MediGuide.Infrastructure/MediGuide.Infrastructure.csproj" />
+</Solution>
