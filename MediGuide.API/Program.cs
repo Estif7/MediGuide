@@ -81,6 +81,11 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 20 * 1024 * 1024; // 20 MB
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
