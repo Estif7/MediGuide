@@ -5,11 +5,12 @@ import { BookingService } from '../../../core/services/booking';
 import { ServiceCategory } from '../../../core/models/service-category.model';
 import { Booking } from '../../../core/models/booking.model';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-patient-dashboard',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })

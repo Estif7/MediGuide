@@ -15,4 +15,8 @@ export class BookingService {
   create(dto: CreateBookingRequest) {
     return this.http.post<Booking>(`${this.api}/bookings`, dto);
   }
+
+  getById(id: string) {
+    return this.http.get<Booking>(`${this.api}/bookings/${id}`);
+  }
 }

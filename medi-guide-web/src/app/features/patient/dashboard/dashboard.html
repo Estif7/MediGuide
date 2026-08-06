@@ -50,12 +50,11 @@
       <ul>
         @for (b of bookings(); track b.id) {
           <li>
-            <strong>{{ b.categoryName }}</strong> —
-            Status: {{ b.status }} —
-            {{ b.amount }} ETB
-            @if (b.notes) {
-              <div>{{ b.notes }}</div>
-            }
+            <a [routerLink]="['/patient/bookings', b.id]">
+              <strong>{{ b.categoryName }}</strong> —
+              Status: {{ b.status }} —
+              {{ b.amount }} ETB
+            </a>
           </li>
         }
       </ul>
