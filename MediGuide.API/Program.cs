@@ -86,6 +86,14 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
     options.MultipartBodyLengthLimit = 20 * 1024 * 1024; // 20 MB
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -94,6 +102,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();    // serves the nice UI at /scalar
 }
 
+app.UseCors();
 // app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

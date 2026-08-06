@@ -482,4 +482,21 @@ $RECYCLE.BIN/
 *.swp
 
 
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
 Uploads/
+
+# Angular / Node
+medi-guide-web/node_modules/
+medi-guide-web/dist/
+medi-guide-web/.angular/
+*.log
+
+# Secrets / local
+appsettings.Development.json
+.env
+.DS_Store

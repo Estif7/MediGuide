@@ -1,0 +1,64 @@
+<div class="page">
+  <header>
+    <h1>Patient Dashboard</h1>
+    <p>Welcome, {{ user()?.fullName }}</p>
+    <button type="button" (click)="logout()">Logout</button>
+  </header>
+
+  @if (message()) {
+    <div class="message">{{ message() }}</div>
+  }
+
+  <section>
+    <h2>Request Support</h2>
+
+    <label>
+      Service
+      <select
+        [ngModel]="selectedCategoryId()"
+        (ngModelChange)="selectedCategoryId.set($event)"
+      >
+        <option value="">-- Select --</option>
+        @for (c of categories(); track c.id) {
+          <option [value]="c.id">
+            {{ c.name }} ({{ c.basePrice }} ETB)
+          </option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Notes
+      <textarea
+        [ngModel]="notes()"
+        (ngModelChange)="notes.set($event)"
+        rows="3"
+      ></textarea>
+    </label>
+
+    <button type="button" (click)="createBooking()" [disabled]="loading()">
+      {{ loading() ? 'Submitting…' : 'Submit Request' }}
+    </button>
+  </section>
+
+  <section>
+    <h2>My Bookings</h2>
+
+    @if (bookings().length === 0) {
+      <p>No bookings yet.</p>
+    } @else {
+      <ul>
+        @for (b of bookings(); track b.id) {
+          <li>
+            <strong>{{ b.categoryName }}</strong> —
+            Status: {{ b.status }} —
+            {{ b.amount }} ETB
+            @if (b.notes) {
+              <div>{{ b.notes }}</div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>
