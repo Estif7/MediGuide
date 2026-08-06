@@ -3,6 +3,7 @@ using MediGuide.Domain.Entities;
 using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MediGuide.API.Controllers;
 
@@ -55,6 +56,8 @@ public class AgentsController : ControllerBase
         return Ok(agent);
     }
 
+    // Only Admin can create agents
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<ActionResult<AgentDto>> Create(CreateAgentDto dto)
     {

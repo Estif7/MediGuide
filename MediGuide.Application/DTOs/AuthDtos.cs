@@ -21,3 +21,10 @@ public record AuthResponseDto(
     Guid? PatientId,
     Guid? AgentId
 );
+
+public record RegisterAgentDto(
+    string FullName,
+    string Email,
+    string PhoneNumber,
+    string Password
+);

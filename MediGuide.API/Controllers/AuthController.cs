@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MediGuide.API.Controllers;
 
@@ -134,5 +135,49 @@ public class AuthController : ControllerBase
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("register-agent")]
+    public async Task<ActionResult<AuthResponseDto>> RegisterAgent(RegisterAgentDto dto)
+    {
+        if (await _userManager.FindByEmailAsync(dto.Email) is not null)
+            return BadRequest("Email is already registered.");
+
+        // 1. Domain Agent
+        var agent = new Agent
+        {
+            FullName = dto.FullName,
+            Email = dto.Email,
+            PhoneNumber = dto.PhoneNumber,
+            IsAvailable = true,
+            IsActive = true
+        };
+        _context.Agents.Add(agent);
+        await _context.SaveChangesAsync();
+
+        // 2. Identity user linked to Agent
+        var user = new ApplicationUser
+        {
+            UserName = dto.Email,
+            Email = dto.Email,
+            FullName = dto.FullName,
+            PhoneNumber = dto.PhoneNumber,
+            AgentId = agent.Id
+        };
+
+        var result = await _userManager.CreateAsync(user, dto.Password);
+        if (!result.Succeeded)
+            return BadRequest(result.Errors.Select(e => e.Description));
+
+        if (!await _roleManager.RoleExistsAsync("Agent"))
+            await _roleManager.CreateAsync(new IdentityRole("Agent"));
+
+        await _userManager.AddToRoleAsync(user, "Agent");
+
+        var token = await GenerateJwtToken(user);
+        var roles = await _userManager.GetRolesAsync(user);
+
+        return Ok(new AuthResponseDto(token, user.Email!, user.FullName, roles, null, agent.Id));
     }
 }

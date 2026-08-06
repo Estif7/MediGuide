@@ -19,6 +19,7 @@ public class BookingsController : ControllerBase
         _context = context;
     }
 
+    [Authorize]
     [HttpGet]
     public async Task<ActionResult<IEnumerable<BookingDto>>> GetAll()
     {
@@ -45,6 +46,7 @@ public class BookingsController : ControllerBase
         return Ok(bookings);
     }
 
+    [Authorize]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<BookingDto>> GetById(Guid id)
     {
@@ -139,6 +141,7 @@ public class BookingsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Admin,Agent")]
     [HttpPatch("{id:guid}/assign")]
     public async Task<ActionResult<BookingDto>> AssignAgent(Guid id, [FromBody] AssignAgentDto dto)
     {
