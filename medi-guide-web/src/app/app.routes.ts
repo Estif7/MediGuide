@@ -20,6 +20,17 @@ export const routes: Routes = [
         (m) => m.BookingDetail
       ),
   },
-  { path: 'agent', loadComponent: () => import('./features/agent/dashboard/dashboard').then(m => m.Dashboard) },
+  {
+    path: 'agent',
+    loadComponent: () =>
+      import('./features/agent/dashboard/dashboard').then((m) => m.Dashboard),
+  },
+  {
+    path: 'agent/bookings/:id',
+    loadComponent: () =>
+      import('./features/patient/booking-detail/booking-detail').then(
+        (m) => m.BookingDetail
+      ),
+  },
   { path: 'admin', loadComponent: () => import('./features/admin/dashboard/dashboard').then(m => m.Dashboard) },
 ];
