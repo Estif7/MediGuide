@@ -32,5 +32,16 @@ export const routes: Routes = [
         (m) => m.BookingDetail
       ),
   },
-  { path: 'admin', loadComponent: () => import('./features/admin/dashboard/dashboard').then(m => m.Dashboard) },
+  {
+    path: 'admin',
+    loadComponent: () =>
+      import('./features/admin/dashboard/dashboard').then((m) => m.Dashboard),
+  },
+  {
+    path: 'admin/bookings/:id',
+    loadComponent: () =>
+      import('./features/patient/booking-detail/booking-detail').then(
+        (m) => m.BookingDetail
+      ),
+  },
 ];

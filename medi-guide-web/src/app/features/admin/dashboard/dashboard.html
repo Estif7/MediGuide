@@ -1,1 +1,81 @@
-<h1>Admin Dashboard</h1>
+<div class="page">
+  <header>
+    <h1>Admin Dashboard</h1>
+    <p>Welcome, {{ user()?.fullName }}</p>
+    <button type="button" (click)="logout()">Logout</button>
+  </header>
+
+  @if (message()) {
+    <div class="message">{{ message() }}</div>
+  }
+
+  <section class="stats">
+    <div>Patients: <strong>{{ patients().length }}</strong></div>
+    <div>Agents: <strong>{{ agents().length }}</strong></div>
+    <div>Bookings: <strong>{{ bookings().length }}</strong></div>
+  </section>
+
+  <section>
+    <h2>Register Agent</h2>
+    <label>
+      Full name
+      <input [ngModel]="agentName()" (ngModelChange)="agentName.set($event)" />
+    </label>
+    <label>
+      Email
+      <input type="email" [ngModel]="agentEmail()" (ngModelChange)="agentEmail.set($event)" />
+    </label>
+    <label>
+      Phone
+      <input [ngModel]="agentPhone()" (ngModelChange)="agentPhone.set($event)" />
+    </label>
+    <label>
+      Password
+      <input type="password" [ngModel]="agentPassword()" (ngModelChange)="agentPassword.set($event)" />
+    </label>
+    <button type="button" (click)="registerAgent()" [disabled]="loading()">
+      {{ loading() ? 'Saving…' : 'Create Agent' }}
+    </button>
+  </section>
+
+  <section>
+    <h2>Agents</h2>
+    <ul>
+      @for (a of agents(); track a.id) {
+        <li>
+          {{ a.fullName }} — {{ a.email }}
+          @if (a.isAvailable) { · Available }
+        </li>
+      } @empty {
+        <li>No agents yet.</li>
+      }
+    </ul>
+  </section>
+
+  <section>
+    <h2>Patients</h2>
+    <ul>
+      @for (p of patients(); track p.id) {
+        <li>{{ p.fullName }} — {{ p.email }}</li>
+      } @empty {
+        <li>No patients yet.</li>
+      }
+    </ul>
+  </section>
+
+  <section>
+    <h2>All Bookings</h2>
+    <ul>
+      @for (b of bookings(); track b.id) {
+        <li>
+          <a [routerLink]="['/admin/bookings', b.id]">
+            {{ b.categoryName }} — {{ b.patientName }} — Status: {{ b.status }}
+            @if (b.agentName) { · {{ b.agentName }} }
+          </a>
+        </li>
+      } @empty {
+        <li>No bookings yet.</li>
+      }
+    </ul>
+  </section>
+</div>
