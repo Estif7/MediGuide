@@ -8,6 +8,8 @@ import { Booking } from '../../../core/models/booking.model';
 import { ChatMessage } from '../../../core/models/chat-message.model';
 import { DocumentItem } from '../../../core/models/document.model';
 import { DatePipe } from '@angular/common';
+import { AgentService, AgentDto } from '../../../core/services/agent';
+import { AuthService } from '../../../core/services/auth';
 
 @Component({
   selector: 'app-booking-detail',
@@ -24,6 +26,14 @@ export class BookingDetail implements OnInit {
   private readonly chatService = inject(ChatService);
   private readonly documentService = inject(DocumentService);
 
+  private readonly agentService = inject(AgentService);
+  private readonly auth = inject(AuthService);
+
+  agents = signal<AgentDto[]>([]);
+  selectedAgentId = signal('');
+  isAdmin = this.auth.isAdmin;
+  isAgent = this.auth.isAgent;
+
   booking = signal<Booking | null>(null);
   messages = signal<ChatMessage[]>([]);
   documents = signal<DocumentItem[]>([]);
@@ -33,6 +43,10 @@ export class BookingDetail implements OnInit {
 
   ngOnInit() {
     this.loadAll();
+
+    this.agentService.getAll().subscribe({
+      next: (a) => this.agents.set(a),
+    });
   }
 
   loadAll() {
@@ -84,6 +98,27 @@ export class BookingDetail implements OnInit {
       },
       error: () => {
         this.message.set('Upload failed');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  assignAgent() {
+    const agentId = this.selectedAgentId();
+    if (!agentId) {
+      this.message.set('Select an agent');
+      return;
+    }
+
+    this.loading.set(true);
+    this.bookingService.assignAgent(this.id(), agentId).subscribe({
+      next: (updated) => {
+        this.booking.set(updated);
+        this.message.set('Agent assigned');
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.message.set(err.error || 'Assign failed');
         this.loading.set(false);
       },
     });

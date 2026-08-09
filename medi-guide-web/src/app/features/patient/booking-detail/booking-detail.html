@@ -18,6 +18,24 @@
     </header>
   }
 
+  @if (isAdmin() || isAgent()) {
+    <section class="assign">
+      <h3>Assign Agent</h3>
+      <select
+        [ngModel]="selectedAgentId()"
+        (ngModelChange)="selectedAgentId.set($event)"
+      >
+        <option value="">-- Select agent --</option>
+        @for (a of agents(); track a.id) {
+          <option [value]="a.id">{{ a.fullName }}</option>
+        }
+      </select>
+      <button type="button" (click)="assignAgent()" [disabled]="loading()">
+        Assign
+      </button>
+    </section>
+  }
+
   <section>
     <h2>Chat</h2>
 

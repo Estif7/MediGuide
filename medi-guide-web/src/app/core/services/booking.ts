@@ -19,4 +19,10 @@ export class BookingService {
   getById(id: string) {
     return this.http.get<Booking>(`${this.api}/bookings/${id}`);
   }
+
+  assignAgent(bookingId: string, agentId: string) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${bookingId}/assign`, {
+      agentId,
+    });
+  }
 }
