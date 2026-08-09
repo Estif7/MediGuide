@@ -8,7 +8,8 @@
   @if (booking(); as b) {
     <header>
       <h1>{{ b.categoryName }}</h1>
-      <p>Status: {{ b.status }} · {{ b.amount }} ETB</p>
+      <p>{{ statusLabel(b.status) }} · {{ b.amount }} ETB</p>
+      <p>Response: {{ timeLabel(b.responseTime) }}</p>
       @if (b.agentName) {
         <p>Agent: {{ b.agentName }}</p>
       }

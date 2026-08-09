@@ -69,7 +69,7 @@
       @for (b of bookings(); track b.id) {
         <li>
           <a [routerLink]="['/admin/bookings', b.id]">
-            {{ b.categoryName }} — {{ b.patientName }} — Status: {{ b.status }}
+            {{ b.categoryName }} — {{ b.patientName }} — {{ statusLabel(b.status) }}
             @if (b.agentName) { · {{ b.agentName }} }
           </a>
         </li>

@@ -21,7 +21,7 @@
             <a [routerLink]="['/agent/bookings', b.id]">
               <strong>{{ b.categoryName }}</strong> —
               {{ b.patientName }} —
-              Status: {{ b.status }}
+              {{ statusLabel(b.status) }}
               @if (b.agentName) {
                 · Agent: {{ b.agentName }}
               }

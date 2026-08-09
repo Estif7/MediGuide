@@ -6,6 +6,7 @@ import { BookingService } from '../../../core/services/booking';
 import { PatientService, PatientDto } from '../../../core/services/patient';
 import { AgentService, AgentDto } from '../../../core/services/agent';
 import { Booking } from '../../../core/models/booking.model';
+import { bookingStatusLabel } from '../../../core/utils/status-label';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -27,6 +28,7 @@ export class Dashboard implements OnInit {
   agents = signal<AgentDto[]>([]);
   message = signal<string | null>(null);
   loading = signal(false);
+  statusLabel = bookingStatusLabel;
 
   // Register agent form fields
   agentName = signal('');

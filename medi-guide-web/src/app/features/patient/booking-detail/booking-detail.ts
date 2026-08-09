@@ -10,6 +10,7 @@ import { DocumentItem } from '../../../core/models/document.model';
 import { DatePipe } from '@angular/common';
 import { AgentService, AgentDto } from '../../../core/services/agent';
 import { AuthService } from '../../../core/services/auth';
+import { bookingStatusLabel, responseTimeLabel } from '../../../core/utils/status-label';
 
 @Component({
   selector: 'app-booking-detail',
@@ -40,6 +41,8 @@ export class BookingDetail implements OnInit {
   newMessage = signal('');
   message = signal<string | null>(null);
   loading = signal(false);
+  statusLabel = bookingStatusLabel;
+  timeLabel = responseTimeLabel;
 
   ngOnInit() {
     this.loadAll();

@@ -6,6 +6,7 @@ import { ServiceCategory } from '../../../core/models/service-category.model';
 import { Booking } from '../../../core/models/booking.model';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { bookingStatusLabel } from '../../../core/utils/status-label';
 
 @Component({
   selector: 'app-patient-dashboard',
@@ -26,6 +27,7 @@ export class Dashboard implements OnInit {
   notes = signal('');
   message = signal<string | null>(null);
   loading = signal(false);
+  statusLabel = bookingStatusLabel;
 
   ngOnInit() {
     this.loadCategories();

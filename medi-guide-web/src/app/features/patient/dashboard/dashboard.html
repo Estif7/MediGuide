@@ -52,7 +52,7 @@
           <li>
             <a [routerLink]="['/patient/bookings', b.id]">
               <strong>{{ b.categoryName }}</strong> —
-              Status: {{ b.status }} —
+              {{ statusLabel(b.status) }} —
               {{ b.amount }} ETB
             </a>
           </li>

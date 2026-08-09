@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
 import { BookingService } from '../../../core/services/booking';
 import { Booking } from '../../../core/models/booking.model';
+import { bookingStatusLabel } from '../../../core/utils/status-label';
 
 @Component({
   selector: 'app-agent-dashboard',
@@ -18,6 +19,7 @@ export class Dashboard implements OnInit {
   user = this.auth.currentUser;
   bookings = signal<Booking[]>([]);
   message = signal<string | null>(null);
+  statusLabel = bookingStatusLabel;
 
   ngOnInit() {
     this.loadBookings();
