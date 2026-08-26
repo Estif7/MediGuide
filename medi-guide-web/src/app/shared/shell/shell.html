@@ -1,0 +1,24 @@
+<header class="app-header">
+  <a class="brand" [routerLink]="homeLink()">Medi-Guide</a>
+
+  <nav class="nav-links" aria-label="Primary navigation">
+    @if (isPatient()) {
+      <a routerLink="/patient" routerLinkActive="active">My dashboard</a>
+    }
+    @if (isAgent()) {
+      <a routerLink="/agent" routerLinkActive="active">Agent dashboard</a>
+    }
+    @if (isAdmin()) {
+      <a routerLink="/admin" routerLinkActive="active">Admin</a>
+    }
+  </nav>
+
+  <div class="user-panel">
+    <span class="user-name">{{ user()?.fullName }}</span>
+    <button mat-stroked-button color="primary" type="button" (click)="logout()">Logout</button>
+  </div>
+</header>
+
+<main class="app-shell-main">
+  <router-outlet />
+</main>

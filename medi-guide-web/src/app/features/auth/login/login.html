@@ -1,24 +1,35 @@
 <div class="login-page">
-  <h1>Medi-Guide Ethiopia</h1>
-  <p>Sign in to continue</p>
+  <mat-card class="login-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Medi-Guide Ethiopia</mat-card-title>
+      <mat-card-subtitle>Sign in to continue</mat-card-subtitle>
+    </mat-card-header>
 
-  @if (error()) {
-    <div class="error">{{ error() }}</div>
-  }
+    <mat-card-content>
+      @if (error()) {
+        <div class="message">{{ error() }}</div>
+      }
 
-  <form [formGroup]="form" (ngSubmit)="submit()">
-    <label>
-      Email
-      <input type="email" formControlName="email" />
-    </label>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" />
+        </mat-form-field>
 
-    <label>
-      Password
-      <input type="password" formControlName="password" />
-    </label>
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" />
+        </mat-form-field>
 
-    <button type="submit" [disabled]="form.invalid || loading()">
-      {{ loading() ? 'Signing in…' : 'Sign in' }}
-    </button>
-  </form>
+        <div class="actions">
+          <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || loading()">
+            @if (loading()) {
+              <mat-progress-spinner diameter="18" mode="indeterminate" />
+            }
+            {{ loading() ? 'Signing in…' : 'Sign in' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
 </div>

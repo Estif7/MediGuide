@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace MediGuide.Application.DTOs;
 
 public record ServiceCategoryDto(
@@ -10,16 +12,16 @@ public record ServiceCategoryDto(
 );
 
 public record CreateServiceCategoryDto(
-    string Name,
-    string NameAmharic,
-    string? Description,
-    decimal BasePrice
+    [property: Required, StringLength(120)] string Name,
+    [property: Required, StringLength(120)] string NameAmharic,
+    [property: StringLength(1000)] string? Description,
+    [property: Range(typeof(decimal), "0.01", "1000000")] decimal BasePrice
 );
 
 public record UpdateServiceCategoryDto(
-    string Name,
-    string NameAmharic,
-    string? Description,
-    decimal BasePrice,
+    [property: Required, StringLength(120)] string Name,
+    [property: Required, StringLength(120)] string NameAmharic,
+    [property: StringLength(1000)] string? Description,
+    [property: Range(typeof(decimal), "0.01", "1000000")] decimal BasePrice,
     bool IsActive
 );

@@ -106,6 +106,13 @@ export class BookingDetail implements OnInit {
     });
   }
 
+  confirmPayment() {
+    this.bookingService.confirmPayment(this.id()).subscribe({
+      next: (b) => { this.booking.set(b); this.message.set('Payment confirmed'); },
+      error: (e) => this.message.set(e.error || 'Failed'),
+    });
+  }
+
   assignAgent() {
     const agentId = this.selectedAgentId();
     if (!agentId) {
@@ -126,4 +133,32 @@ export class BookingDetail implements OnInit {
       },
     });
   }
+
+  accept() {
+    this.bookingService.accept(this.id()).subscribe({
+      next: (b) => { this.booking.set(b); this.message.set('Booking accepted'); },
+      error: (e) => this.message.set(e.error || 'Failed'),
+    });
+  }
+
+  decline() {
+    this.bookingService.decline(this.id()).subscribe({
+      next: (b) => { this.booking.set(b); this.message.set('Booking declined'); },
+      error: (e) => this.message.set(e.error || 'Failed'),
+    });
+  }
+
+  refer() {
+    const agentId = this.selectedAgentId();
+    if (!agentId) { this.message.set('Select an agent'); return; }
+    this.bookingService.refer(this.id(), agentId).subscribe({
+      next: (b) => { this.booking.set(b); this.message.set('Referred to another agent'); },
+      error: (e) => this.message.set(e.error || 'Failed'),
+    });
+  }
+
+  docDownloadUrl(id: string) {
+    return this.documentService.downloadUrl(id);
+  }
+
 }

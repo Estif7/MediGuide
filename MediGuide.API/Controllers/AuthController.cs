@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using MediGuide.Application.DTOs;
 using MediGuide.Domain.Entities;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace MediGuide.API.Controllers;
 
@@ -36,6 +38,7 @@ public class AuthController : ControllerBase
         _config = config;
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("register-patient")]
     public async Task<ActionResult<AuthResponseDto>> RegisterPatient(RegisterPatientDto dto)
     {
@@ -73,33 +76,91 @@ public class AuthController : ControllerBase
 
         await _userManager.AddToRoleAsync(user, "Patient");
 
-        var token = await GenerateJwtToken(user);
-        var roles = await _userManager.GetRolesAsync(user);
-
-        return Ok(new AuthResponseDto(token, user.Email!, user.FullName, roles, patient.Id, null));
+        return Ok(await CreateAuthResponseAsync(user));
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponseDto>> Login(LoginDto dto)
     {
         var user = await _userManager.FindByEmailAsync(dto.Email);
         if (user is null)
-            return Unauthorized("Invalid email or password.");
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Invalid email or password.");
 
-        var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
+        var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
+        if (result.IsLockedOut)
+            return Problem(statusCode: StatusCodes.Status423Locked, title: "Account locked due to repeated failed sign-in attempts.");
+
         if (!result.Succeeded)
-            return Unauthorized("Invalid email or password.");
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Invalid email or password.");
 
-        var token = await GenerateJwtToken(user);
-        var roles = await _userManager.GetRolesAsync(user);
+        return Ok(await CreateAuthResponseAsync(user));
+    }
 
-        return Ok(new AuthResponseDto(
-            token,
-            user.Email!,
-            user.FullName,
-            roles,
-            user.PatientId,
-            user.AgentId));
+    [EnableRateLimiting("auth")]
+    [HttpPost("refresh")]
+    public async Task<ActionResult<AuthResponseDto>> Refresh(RefreshTokenRequestDto dto)
+    {
+        if (!TryHashToken(dto.RefreshToken, out var tokenHash))
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Invalid refresh token.");
+
+        var token = await _context.RefreshTokens
+            .SingleOrDefaultAsync(refreshToken => refreshToken.TokenHash == tokenHash);
+
+        if (token is null)
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Invalid refresh token.");
+
+        if (token.ReplacedByTokenId.HasValue)
+        {
+            await RevokeActiveRefreshTokensAsync(token.ApplicationUserId, "Refresh token reuse detected.");
+            return Problem(statusCode: StatusCodes.Status401Unauthorized,
+                title: "Refresh token reuse detected. All active sessions have been revoked.");
+        }
+
+        if (token.IsRevoked || token.IsExpired)
+        {
+            if (!token.IsRevoked)
+            {
+                token.RevokedAt = DateTime.UtcNow;
+                token.RevokedReason = "Expired";
+                await _context.SaveChangesAsync();
+            }
+
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Refresh token is expired or revoked.");
+        }
+
+        var user = await _userManager.FindByIdAsync(token.ApplicationUserId);
+        if (user is null)
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Invalid refresh token.");
+
+        var replacementToken = CreateRefreshToken(user.Id);
+        token.RevokedAt = DateTime.UtcNow;
+        token.RevokedReason = "Rotated";
+        token.ReplacedByTokenId = replacementToken.Token.Id;
+        _context.RefreshTokens.Add(replacementToken.Token);
+        await _context.SaveChangesAsync();
+
+        return Ok(await CreateAuthResponseAsync(user, replacementToken.PlainText));
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(RefreshTokenRequestDto dto)
+    {
+        if (!TryHashToken(dto.RefreshToken, out var tokenHash))
+            return NoContent();
+
+        var token = await _context.RefreshTokens
+            .SingleOrDefaultAsync(refreshToken => refreshToken.TokenHash == tokenHash);
+
+        if (token is not null && !token.IsRevoked)
+        {
+            token.RevokedAt = DateTime.UtcNow;
+            token.RevokedReason = "User logout";
+            await _context.SaveChangesAsync();
+        }
+
+        return NoContent();
     }
 
     private async Task<string> GenerateJwtToken(ApplicationUser user)
@@ -139,7 +200,7 @@ public class AuthController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpPost("register-agent")]
-    public async Task<ActionResult<AuthResponseDto>> RegisterAgent(RegisterAgentDto dto)
+    public async Task<ActionResult<AgentDto>> RegisterAgent(RegisterAgentDto dto)
     {
         if (await _userManager.FindByEmailAsync(dto.Email) is not null)
             return BadRequest("Email is already registered.");
@@ -175,9 +236,79 @@ public class AuthController : ControllerBase
 
         await _userManager.AddToRoleAsync(user, "Agent");
 
+        var agentDto = new AgentDto(
+            agent.Id,
+            agent.FullName,
+            agent.Email,
+            agent.PhoneNumber,
+            agent.IsAvailable,
+            agent.IsActive);
+
+        return CreatedAtAction(nameof(AgentsController.GetById), "Agents", new { id = agent.Id }, agentDto);
+    }
+
+    private async Task<AuthResponseDto> CreateAuthResponseAsync(ApplicationUser user, string? refreshToken = null)
+    {
         var token = await GenerateJwtToken(user);
         var roles = await _userManager.GetRolesAsync(user);
+        refreshToken ??= await IssueRefreshTokenAsync(user.Id);
 
-        return Ok(new AuthResponseDto(token, user.Email!, user.FullName, roles, null, agent.Id));
+        return new AuthResponseDto(
+            token,
+            refreshToken,
+            user.Email!,
+            user.FullName,
+            roles,
+            user.PatientId,
+            user.AgentId);
+    }
+
+    private async Task<string> IssueRefreshTokenAsync(string userId)
+    {
+        var refreshToken = CreateRefreshToken(userId);
+        _context.RefreshTokens.Add(refreshToken.Token);
+        await _context.SaveChangesAsync();
+        return refreshToken.PlainText;
+    }
+
+    private (RefreshToken Token, string PlainText) CreateRefreshToken(string userId)
+    {
+        var secret = RandomNumberGenerator.GetBytes(64);
+        var plainText = Convert.ToBase64String(secret);
+        return (new RefreshToken
+        {
+            ApplicationUserId = userId,
+            TokenHash = Convert.ToHexString(SHA256.HashData(secret)),
+            ExpiresAt = DateTime.UtcNow.AddDays(int.Parse(_config["Jwt:RefreshTokenDays"] ?? "7"))
+        }, plainText);
+    }
+
+    private async Task RevokeActiveRefreshTokensAsync(string userId, string reason)
+    {
+        var activeTokens = await _context.RefreshTokens
+            .Where(token => token.ApplicationUserId == userId && token.RevokedAt == null)
+            .ToListAsync();
+
+        foreach (var activeToken in activeTokens)
+        {
+            activeToken.RevokedAt = DateTime.UtcNow;
+            activeToken.RevokedReason = reason;
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    private static bool TryHashToken(string token, out string tokenHash)
+    {
+        try
+        {
+            tokenHash = Convert.ToHexString(SHA256.HashData(Convert.FromBase64String(token)));
+            return true;
+        }
+        catch (FormatException)
+        {
+            tokenHash = string.Empty;
+            return false;
+        }
     }
 }

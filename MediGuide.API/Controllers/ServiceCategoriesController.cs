@@ -2,6 +2,7 @@ using MediGuide.Application.DTOs;
 using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MediGuide.API.Controllers;
 
@@ -54,6 +55,7 @@ public class ServiceCategoriesController : ControllerBase
         return Ok(category);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<ActionResult<ServiceCategoryDto>> Create(CreateServiceCategoryDto dto)
     {

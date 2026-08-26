@@ -1,10 +1,17 @@
 using System.Text;
+using System.Threading.RateLimiting;
+using MediGuide.API.Authorization;
+using MediGuide.API.Infrastructure;
+using MediGuide.API.Middleware;
 using MediGuide.Domain.Entities;
 using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
 using Microsoft.OpenApi;
 
@@ -12,6 +19,27 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var problem = new ValidationProblemDetails(context.ModelState)
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Title = "One or more validation errors occurred.",
+            Type = "https://httpstatuses.com/400",
+            Instance = context.HttpContext.Request.Path
+        };
+        problem.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+
+        return new BadRequestObjectResult(problem)
+        {
+            ContentTypes = { "application/problem+json" }
+        };
+    };
+});
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, context, cancellationToken) =>
@@ -50,10 +78,15 @@ builder.Services.AddDbContext<MediGuideDbContext>(options =>
 // Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireDigit = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
     options.User.RequireUniqueEmail = true;
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 })
 .AddEntityFrameworkStores<MediGuideDbContext>()
 .AddDefaultTokenProviders();
@@ -79,7 +112,42 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("BookingAccess", policy =>
+        policy.Requirements.Add(new BookingAccessRequirement()));
+});
+builder.Services.AddSingleton<IAuthorizationHandler, BookingAccessHandler>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", context =>
+    {
+        var clientKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(clientKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
+    });
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        var problem = new ProblemDetails
+        {
+            Status = StatusCodes.Status429TooManyRequests,
+            Title = "Too many authentication requests.",
+            Type = "https://httpstatuses.com/429",
+            Instance = context.HttpContext.Request.Path
+        };
+        problem.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+
+        context.HttpContext.Response.ContentType = "application/problem+json";
+        await context.HttpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
+    };
+});
 
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
 {
@@ -102,8 +170,18 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();    // serves the nice UI at /scalar
 }
 
+app.UseMiddleware<RequestCorrelationMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseExceptionHandler();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+
 app.UseCors();
-// app.UseHttpsRedirection();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

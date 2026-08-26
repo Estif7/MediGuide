@@ -14,16 +14,28 @@ namespace MediGuide.API.Controllers;
 public class ChatMessagesController : ControllerBase
 {
     private readonly MediGuideDbContext _context;
+    private readonly IAuthorizationService _authorizationService;
 
-    public ChatMessagesController(MediGuideDbContext context)
+    public ChatMessagesController(
+        MediGuideDbContext context,
+        IAuthorizationService authorizationService)
     {
         _context = context;
+        _authorizationService = authorizationService;
     }
 
     // List messages for a booking (oldest first)
     [HttpGet("booking/{bookingId:guid}")]
     public async Task<ActionResult<IEnumerable<ChatMessageDto>>> GetByBooking(Guid bookingId)
     {
+        var booking = await _context.Bookings.FindAsync(bookingId);
+        if (booking is null)
+            return NotFound("Booking not found.");
+
+        var authorizationResult = await _authorizationService.AuthorizeAsync(User, booking, "BookingAccess");
+        if (!authorizationResult.Succeeded)
+            return Forbid();
+
         var messages = await _context.ChatMessages
             .Where(m => m.BookingId == bookingId)
             .OrderBy(m => m.CreatedAt)
@@ -44,12 +56,13 @@ public class ChatMessagesController : ControllerBase
     [HttpPost("booking/{bookingId:guid}")]
     public async Task<ActionResult<ChatMessageDto>> Send(Guid bookingId, CreateChatMessageDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.Content))
-            return BadRequest("Message cannot be empty.");
-
-        var bookingExists = await _context.Bookings.AnyAsync(b => b.Id == bookingId);
-        if (!bookingExists)
+        var booking = await _context.Bookings.FindAsync(bookingId);
+        if (booking is null)
             return NotFound("Booking not found.");
+
+        var authorizationResult = await _authorizationService.AuthorizeAsync(User, booking, "BookingAccess");
+        if (!authorizationResult.Succeeded)
+            return Forbid();
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
                      ?? User.FindFirstValue("sub")

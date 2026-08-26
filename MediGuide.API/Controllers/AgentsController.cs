@@ -18,6 +18,7 @@ public class AgentsController : ControllerBase
         _context = context;
     }
 
+    [Authorize(Roles = "Admin,Agent")]
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AgentDto>>> GetAll()
     {
@@ -36,9 +37,16 @@ public class AgentsController : ControllerBase
         return Ok(agents);
     }
 
+    [Authorize]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<AgentDto>> GetById(Guid id)
     {
+        if (!User.IsInRole("Admin")
+            && (!Guid.TryParse(User.FindFirst("agentId")?.Value, out var agentId) || agentId != id))
+        {
+            return Forbid();
+        }
+
         var agent = await _context.Agents
             .Where(a => a.Id == id)
             .Select(a => new AgentDto(

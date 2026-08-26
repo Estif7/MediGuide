@@ -20,4 +20,8 @@ export class DocumentService {
       form
     );
   }
+
+  downloadUrl(id: string) {
+    return `${this.api}/documents/${id}/download`;
+  }
 }

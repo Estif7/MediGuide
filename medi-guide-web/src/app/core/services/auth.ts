@@ -41,9 +41,16 @@ export class AuthService {
   }
 
   logout() {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
-    this.router.navigateByUrl('/login');
+    const refreshToken = this._user()?.refreshToken;
+    if (refreshToken) {
+      this.http.post<void>(`${this.api}/auth/logout`, { refreshToken }).subscribe({
+        complete: () => this.clearSession(),
+        error: () => this.clearSession(),
+      });
+      return;
+    }
+
+    this.clearSession();
   }
 
   getToken(): string | null {
@@ -56,6 +63,14 @@ export class AuthService {
     localStorage.setItem(this.userKey, JSON.stringify(res));
     this._token.set(res.token);
     this._user.set(res);
+  }
+
+  private clearSession() {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.userKey);
+    this._token.set(null);
+    this._user.set(null);
+    this.router.navigateByUrl('/login');
   }
 
   private readToken(): string | null {

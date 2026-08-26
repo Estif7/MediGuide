@@ -20,9 +20,23 @@ export class BookingService {
     return this.http.get<Booking>(`${this.api}/bookings/${id}`);
   }
 
+  confirmPayment(id: string) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${id}/confirm-payment`, {});
+  }
+
   assignAgent(bookingId: string, agentId: string) {
-    return this.http.patch<Booking>(`${this.api}/bookings/${bookingId}/assign`, {
-      agentId,
-    });
+    return this.http.patch<Booking>(`${this.api}/bookings/${bookingId}/assign`, { agentId });
+  }
+
+  accept(id: string) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${id}/accept`, {});
+  }
+
+  decline(id: string) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${id}/decline`, {});
+  }
+
+  refer(id: string, agentId: string) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${id}/refer`, { agentId });
   }
 }

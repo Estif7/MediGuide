@@ -19,6 +19,7 @@ public class MediGuideDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<InternalNote> InternalNotes => Set<InternalNote>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -3,6 +3,7 @@ using MediGuide.Domain.Entities;
 using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MediGuide.API.Controllers;
 
@@ -17,6 +18,7 @@ public class PatientsController : ControllerBase
         _context = context;
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PatientDto>>> GetAll()
     {
@@ -35,9 +37,16 @@ public class PatientsController : ControllerBase
         return Ok(patients);
     }
 
+    [Authorize]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<PatientDto>> GetById(Guid id)
     {
+        if (!User.IsInRole("Admin")
+            && (!Guid.TryParse(User.FindFirst("patientId")?.Value, out var patientId) || patientId != id))
+        {
+            return Forbid();
+        }
+
         var patient = await _context.Patients
             .Where(p => p.Id == id)
             .Select(p => new PatientDto(
@@ -55,6 +64,7 @@ public class PatientsController : ControllerBase
         return Ok(patient);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<ActionResult<PatientDto>> Create(CreatePatientDto dto)
     {

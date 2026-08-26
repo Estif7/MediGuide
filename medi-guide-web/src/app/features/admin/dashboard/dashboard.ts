@@ -1,5 +1,12 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule } from '@angular/material/list';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
 import { BookingService } from '../../../core/services/booking';
@@ -11,7 +18,17 @@ import { bookingStatusLabel } from '../../../core/utils/status-label';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [
+    FormsModule,
+    RouterLink,
+    MatToolbarModule,
+    MatCardModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatListModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -30,7 +47,6 @@ export class Dashboard implements OnInit {
   loading = signal(false);
   statusLabel = bookingStatusLabel;
 
-  // Register agent form fields
   agentName = signal('');
   agentEmail = signal('');
   agentPhone = signal('');
