@@ -1,6 +1,4 @@
 <div class="page">
-    <a routerLink="/">← Back</a>
-
   @if (message()) {
     <div class="message">{{ message() }}</div>
   }
@@ -17,7 +15,20 @@
         <p>Notes: {{ b.notes }}</p>
       }
     </header>
+
+    @if (isAdmin()) {
+      <mat-form-field appearance="outline">
+        <mat-label>Booking status</mat-label>
+        <mat-select [value]="b.status" (selectionChange)="updateStatus($event.value)">
+          @for (s of allowedStatuses; track s) {
+            <mat-option [value]="s">{{ statusLabel(s) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
   }
+
+  
 
   @if (isAdmin() || isAgent()) {
     <section class="assign">

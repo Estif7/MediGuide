@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { Booking, CreateBookingRequest } from '../models/booking.model';
+import { Booking, BookingStatus, CreateBookingRequest } from '../models/booking.model';
 
 @Injectable({ providedIn: 'root' })
 export class BookingService {
@@ -38,5 +38,9 @@ export class BookingService {
 
   refer(id: string, agentId: string) {
     return this.http.patch<Booking>(`${this.api}/bookings/${id}/refer`, { agentId });
+  }
+
+  updateBookingStatus(id: string, status: BookingStatus) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${id}/booking-status`, { status });
   }
 }

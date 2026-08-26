@@ -4,18 +4,20 @@ import { FormsModule } from '@angular/forms';
 import { BookingService } from '../../../core/services/booking';
 import { ChatService } from '../../../core/services/chat';
 import { DocumentService } from '../../../core/services/document';
-import { Booking } from '../../../core/models/booking.model';
 import { ChatMessage } from '../../../core/models/chat-message.model';
 import { DocumentItem } from '../../../core/models/document.model';
 import { DatePipe } from '@angular/common';
 import { AgentService, AgentDto } from '../../../core/services/agent';
 import { AuthService } from '../../../core/services/auth';
 import { bookingStatusLabel, responseTimeLabel } from '../../../core/utils/status-label';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { Booking, BookingStatus } from '../../../core/models/booking.model';
 
 @Component({
   selector: 'app-booking-detail',
   standalone: true,
-  imports: [RouterLink, FormsModule, DatePipe],
+  imports: [RouterLink, FormsModule, DatePipe, MatFormFieldModule, MatSelectModule],
   templateUrl: './booking-detail.html',
   styleUrl: './booking-detail.scss',
 })
@@ -159,6 +161,18 @@ export class BookingDetail implements OnInit {
 
   docDownloadUrl(id: string) {
     return this.documentService.downloadUrl(id);
+  }
+
+  allowedStatuses: BookingStatus[] = [0, 1, 2, 3]; // PendingPayment, Paid, Assigned, InProgress
+
+  updateStatus(newStatus: BookingStatus) {
+    this.bookingService.updateBookingStatus(this.id(), newStatus).subscribe({
+      next: (updated) => {
+        this.booking.set(updated);
+        this.message.set(`Status updated to ${this.statusLabel(newStatus)}`);
+      },
+      error: (err) => this.message.set(err.error?.title || 'Failed to update status'),
+    });
   }
 
 }

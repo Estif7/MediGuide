@@ -12,8 +12,8 @@ public record PatientDto(
 );
 
 public record CreatePatientDto(
-    [property: Required, StringLength(150)] string FullName,
-    [property: Required, EmailAddress, StringLength(254)] string Email,
-    [property: Required, StringLength(32)] string PhoneNumber,
-    [property: StringLength(10)] string? PreferredLanguage
+    [Required, StringLength(150)] string FullName,
+    [Required, EmailAddress, StringLength(254)] string Email,
+    [Required, StringLength(32)] string PhoneNumber,
+    [StringLength(10)] string? PreferredLanguage
 );

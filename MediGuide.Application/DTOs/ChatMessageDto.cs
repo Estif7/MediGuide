@@ -13,5 +13,5 @@ public record ChatMessageDto(
 );
 
 public record CreateChatMessageDto(
-    [property: Required, StringLength(4000)] string Content
+    [Required, StringLength(4000)] string Content
 );

@@ -134,37 +134,7 @@ public class BookingsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = booking.Id }, result);
     }
 
-[Authorize(Roles = "Admin")]
-[HttpPatch("{id:guid}/confirm-payment")]
-public async Task<ActionResult<BookingDto>> ConfirmPayment(Guid id)
-{
-    var booking = await LoadBooking(id);
-    if (booking is null) return NotFound();
-
-    if (booking.Status != BookingStatus.PendingPayment)
-        return BadRequest("Only pending-payment bookings can be confirmed.");
-
-    booking.Status = BookingStatus.Paid;
-    booking.UpdatedAt = DateTime.UtcNow;
-    await _context.SaveChangesAsync();
-
-    return Ok(ToDto(booking));
-}
-    // Optional: simple status update (useful later for assignment)
-    [Authorize(Roles = "Admin")]
-    [HttpPatch("{id:guid}/status")]
-    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] BookingStatus newStatus)
-    {
-        var booking = await _context.Bookings.FindAsync(id);
-        if (booking is null)
-            return NotFound();
-
-        booking.Status = newStatus;
-        booking.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-        return NoContent();
-    }
+    
 
     [Authorize(Roles = "Admin")]
 [HttpPatch("{id:guid}/assign")]
@@ -288,4 +258,30 @@ private static BookingDto ToDto(Booking b) => new(
     b.Amount,
     b.Notes,
     b.CreatedAt);
+
+private static readonly BookingStatus[] AdminAssignableStatuses =
+{
+    BookingStatus.PendingPayment,
+    BookingStatus.Paid,
+    BookingStatus.Assigned,
+    BookingStatus.InProgress
+};
+
+[Authorize(Roles = "Admin")]
+[HttpPatch("{id:guid}/booking-status")]
+public async Task<ActionResult<BookingDto>> UpdateBookingStatus(Guid id, UpdateBookingStatusDto dto)
+{
+    if (!AdminAssignableStatuses.Contains(dto.Status))
+        return BadRequest($"Status must be one of: {string.Join(", ", AdminAssignableStatuses)}");
+
+    var booking = await LoadBooking(id);
+    if (booking is null)
+        return NotFound();
+
+    booking.Status = dto.Status;
+    booking.UpdatedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+
+    return Ok(ToDto(booking));
+}
 }

@@ -19,8 +19,12 @@ public record BookingDto(
 );
 
 public record CreateBookingDto(
-    [property: Required] Guid PatientId,
-    [property: Required] Guid ServiceCategoryId,
+    [Required] Guid PatientId,
+    [Required] Guid ServiceCategoryId,
     ResponseTime ResponseTime,
-    [property: StringLength(2000)] string? Notes
+    [StringLength(2000)] string? Notes
+);
+
+public record UpdateBookingStatusDto(
+    [Required] BookingStatus Status
 );

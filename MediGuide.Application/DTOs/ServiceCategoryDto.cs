@@ -12,16 +12,16 @@ public record ServiceCategoryDto(
 );
 
 public record CreateServiceCategoryDto(
-    [property: Required, StringLength(120)] string Name,
-    [property: Required, StringLength(120)] string NameAmharic,
-    [property: StringLength(1000)] string? Description,
-    [property: Range(typeof(decimal), "0.01", "1000000")] decimal BasePrice
+    [Required, StringLength(120)] string Name,
+    [Required, StringLength(120)] string NameAmharic,
+    [StringLength(1000)] string? Description,
+    [Range(typeof(decimal), "0.01", "1000000")] decimal BasePrice
 );
 
 public record UpdateServiceCategoryDto(
-    [property: Required, StringLength(120)] string Name,
-    [property: Required, StringLength(120)] string NameAmharic,
-    [property: StringLength(1000)] string? Description,
-    [property: Range(typeof(decimal), "0.01", "1000000")] decimal BasePrice,
+    [Required, StringLength(120)] string Name,
+    [Required, StringLength(120)] string NameAmharic,
+    [StringLength(1000)] string? Description,
+    [Range(typeof(decimal), "0.01", "1000000")] decimal BasePrice,
     bool IsActive
 );
