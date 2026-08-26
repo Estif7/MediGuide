@@ -10,9 +10,3 @@ public record AgentDto(
     bool IsAvailable,
     bool IsActive
 );
-
-public record CreateAgentDto(
-    [property: Required, StringLength(150)] string FullName,
-    [property: Required, EmailAddress, StringLength(254)] string Email,
-    [property: Required, StringLength(32)] string PhoneNumber
-);

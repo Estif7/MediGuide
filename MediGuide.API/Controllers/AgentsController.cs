@@ -22,8 +22,17 @@ public class AgentsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AgentDto>>> GetAll()
     {
-        var agents = await _context.Agents
-            .Where(a => a.IsActive)
+        var query = _context.Agents.Where(a => a.IsActive);
+
+        if (!User.IsInRole("Admin"))
+        {
+            if (!Guid.TryParse(User.FindFirst("agentId")?.Value, out var callerAgentId))
+                return Forbid();
+
+            query = query.Where(a => a.Id == callerAgentId);
+        }
+
+        var agents = await query
             .OrderBy(a => a.FullName)
             .Select(a => new AgentDto(
                 a.Id,
@@ -62,33 +71,5 @@ public class AgentsController : ControllerBase
             return NotFound();
 
         return Ok(agent);
-    }
-
-    // Only Admin can create agents
-    [Authorize(Roles = "Admin")]
-    [HttpPost]
-    public async Task<ActionResult<AgentDto>> Create(CreateAgentDto dto)
-    {
-        var agent = new Agent
-        {
-            FullName = dto.FullName,
-            Email = dto.Email,
-            PhoneNumber = dto.PhoneNumber,
-            IsAvailable = true,
-            IsActive = true
-        };
-
-        _context.Agents.Add(agent);
-        await _context.SaveChangesAsync();
-
-        var result = new AgentDto(
-            agent.Id,
-            agent.FullName,
-            agent.Email,
-            agent.PhoneNumber,
-            agent.IsAvailable,
-            agent.IsActive);
-
-        return CreatedAtAction(nameof(GetById), new { id = agent.Id }, result);
     }
 }
