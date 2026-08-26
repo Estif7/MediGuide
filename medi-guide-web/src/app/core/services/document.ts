@@ -21,7 +21,9 @@ export class DocumentService {
     );
   }
 
-  downloadUrl(id: string) {
-    return `${this.api}/documents/${id}/download`;
+  download(id: string) {
+    return this.http.get(`${this.api}/documents/${id}/download`, {
+      responseType: 'blob',
+    });
   }
 }

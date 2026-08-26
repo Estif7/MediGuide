@@ -159,8 +159,18 @@ export class BookingDetail implements OnInit {
     });
   }
 
-  docDownloadUrl(id: string) {
-    return this.documentService.downloadUrl(id);
+  downloadDocument(doc: DocumentItem) {
+    this.documentService.download(doc.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = doc.fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => this.message.set('Download failed'),
+    });
   }
 
   allowedStatuses: BookingStatus[] = [0, 1, 2, 3]; // PendingPayment, Paid, Assigned, InProgress

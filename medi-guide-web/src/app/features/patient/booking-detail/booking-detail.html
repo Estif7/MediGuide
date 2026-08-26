@@ -87,6 +87,7 @@
         <li>
           {{ d.fileName }}
           <small>({{ d.uploadedBy }} · {{ d.fileSizeBytes }} bytes)</small>
+          <button type="button" (click)="downloadDocument(d)">Download</button>
         </li>
       } @empty {
         <li>No documents uploaded.</li>
