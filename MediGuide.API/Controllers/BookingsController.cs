@@ -5,6 +5,8 @@ using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using MediGuide.API.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace MediGuide.API.Controllers;
 
@@ -14,15 +16,18 @@ public class BookingsController : ControllerBase
 {
     private readonly MediGuideDbContext _context;
     private readonly IAuthorizationService _authorizationService;
+    private readonly IHubContext<BookingHub> _hubContext;
 
     public BookingsController(
         MediGuideDbContext context,
-        IAuthorizationService authorizationService)
+        IAuthorizationService authorizationService,
+        IHubContext<BookingHub> hubContext)
     {
         _context = context;
         _authorizationService = authorizationService;
+        _hubContext = hubContext;
     }
-
+ 
     private const int MaxPageSize = 100;
 
     [Authorize]
@@ -186,6 +191,10 @@ public async Task<ActionResult<BookingDto>> AssignAgent(Guid id, [FromBody] Assi
     await _context.SaveChangesAsync();
 
     await _context.Entry(booking).Reference(b => b.Agent).LoadAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("BookingUpdated", ToDto(booking));
+
     return Ok(ToDto(booking));
 }
 
@@ -206,6 +215,9 @@ public async Task<ActionResult<BookingDto>> Accept(Guid id)
     booking.Status = BookingStatus.InProgress;
     booking.UpdatedAt = DateTime.UtcNow;
     await _context.SaveChangesAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("BookingUpdated", ToDto(booking));
 
     return Ok(ToDto(booking));
 }
@@ -228,6 +240,9 @@ public async Task<ActionResult<BookingDto>> Decline(Guid id)
     booking.Status = BookingStatus.Paid; // back to admin pool
     booking.UpdatedAt = DateTime.UtcNow;
     await _context.SaveChangesAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("BookingUpdated", ToDto(booking));
 
     return Ok(ToDto(booking));
 }
@@ -259,6 +274,10 @@ public async Task<ActionResult<BookingDto>> Refer(Guid id, [FromBody] AssignAgen
     await _context.SaveChangesAsync();
 
     await _context.Entry(booking).Reference(b => b.Agent).LoadAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+    .SendAsync("BookingUpdated", ToDto(booking));
+
     return Ok(ToDto(booking));
 }
 
@@ -312,6 +331,9 @@ public async Task<ActionResult<BookingDto>> UpdateBookingStatus(Guid id, UpdateB
     booking.UpdatedAt = DateTime.UtcNow;
     await _context.SaveChangesAsync();
 
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+    .SendAsync("BookingUpdated", ToDto(booking));
+    
     return Ok(ToDto(booking));
 }
 }

@@ -5,6 +5,8 @@ using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MediGuide.API.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace MediGuide.API.Controllers;
 
@@ -15,13 +17,17 @@ public class ChatMessagesController : ControllerBase
 {
     private readonly MediGuideDbContext _context;
     private readonly IAuthorizationService _authorizationService;
+    private readonly IHubContext<BookingHub> _hubContext;
     private const int MaxChatPageSize = 100;
+
     public ChatMessagesController(
         MediGuideDbContext context,
-        IAuthorizationService authorizationService)
+        IAuthorizationService authorizationService,
+        IHubContext<BookingHub> hubContext)
     {
         _context = context;
         _authorizationService = authorizationService;
+        _hubContext = hubContext;
     }
 
     [HttpGet("booking/{bookingId:guid}")]
@@ -99,6 +105,9 @@ public class ChatMessagesController : ControllerBase
             message.Content,
             message.IsRead,
             message.CreatedAt);
+
+        await _hubContext.Clients.Group(BookingHub.GroupName(bookingId))
+            .SendAsync("ReceiveMessage", result);
 
         return CreatedAtAction(nameof(GetByBooking), new { bookingId }, result);
     }

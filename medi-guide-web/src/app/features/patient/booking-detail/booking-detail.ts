@@ -1,5 +1,5 @@
 import {
-  Component, inject, signal, OnInit, AfterViewChecked, input, ViewChild, ElementRef,
+  Component, inject, signal, OnInit, OnDestroy, AfterViewChecked, input, ViewChild, ElementRef,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BookingService } from '../../../core/services/booking';
 import { ChatService } from '../../../core/services/chat';
 import { DocumentService } from '../../../core/services/document';
+import { SignalRService } from '../../../core/services/signalr';
 import { Booking, BookingStatus } from '../../../core/models/booking.model';
 import { ChatMessage } from '../../../core/models/chat-message.model';
 import { DocumentItem } from '../../../core/models/document.model';
@@ -37,7 +38,7 @@ import { bookingStatusLabel, responseTimeLabel } from '../../../core/utils/statu
   templateUrl: './booking-detail.html',
   styleUrl: './booking-detail.scss',
 })
-export class BookingDetail implements OnInit, AfterViewChecked {
+export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
   id = input.required<string>();
 
   private readonly bookingService = inject(BookingService);
@@ -45,6 +46,7 @@ export class BookingDetail implements OnInit, AfterViewChecked {
   private readonly documentService = inject(DocumentService);
   private readonly agentService = inject(AgentService);
   private readonly auth = inject(AuthService);
+  private readonly signalR = inject(SignalRService);
 
   @ViewChild('chatScroll') chatScrollRef?: ElementRef<HTMLDivElement>;
   private shouldScrollToBottom = false;
@@ -69,6 +71,29 @@ export class BookingDetail implements OnInit, AfterViewChecked {
   ngOnInit() {
     this.loadAll();
     this.agentService.getAll().subscribe({ next: (a) => this.agents.set(a.items) });
+
+    this.signalR.connect();
+    this.signalR.joinBooking(this.id());
+
+    this.signalR.onReceiveMessage((msg) => {
+      if (msg.bookingId !== this.id()) return;
+      // Avoid duplicating the message we just added optimistically from our own send
+      if (this.messages().some((m) => m.id === msg.id)) return;
+
+      this.messages.update((list) => [...list, msg]);
+      this.shouldScrollToBottom = true;
+    });
+
+    this.signalR.onBookingUpdated((updated) => {
+      if (updated.id !== this.id()) return;
+      this.booking.set(updated);
+    });
+  }
+
+  ngOnDestroy() {
+    this.signalR.leaveBooking(this.id());
+    this.signalR.offReceiveMessage();
+    this.signalR.offBookingUpdated();
   }
 
   ngAfterViewChecked() {
