@@ -25,7 +25,7 @@
     <mat-card appearance="outlined" class="summary-card">
       <mat-card-title>Bookings</mat-card-title>
       <mat-card-content>
-        <strong>{{ bookings().length }}</strong>
+        <strong>{{ totalCount() }}</strong>
       </mat-card-content>
     </mat-card>
   </div>
@@ -111,6 +111,15 @@
       <mat-card-title>All Bookings</mat-card-title>
     </mat-card-header>
     <mat-card-content>
+      <mat-form-field appearance="outline">
+        <mat-label>Filter by status</mat-label>
+        <mat-select [value]="statusFilter()" (selectionChange)="onStatusFilterChange($event.value)">
+          @for (opt of statusOptions; track opt.label) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
       <mat-list>
         @for (b of bookings(); track b.id) {
           <a class="list-item-link" [routerLink]="['/admin/bookings', b.id]">
@@ -120,9 +129,15 @@
             </mat-list-item>
           </a>
         } @empty {
-          <mat-list-item>No bookings yet.</mat-list-item>
+          <mat-list-item>No bookings match this filter.</mat-list-item>
         }
       </mat-list>
+
+      <div class="pagination">
+        <button mat-button type="button" (click)="prevPage()" [disabled]="page() <= 1">Previous</button>
+        <span>Page {{ page() }} of {{ totalPages() }} ({{ totalCount() }} total)</span>
+        <button mat-button type="button" (click)="nextPage()" [disabled]="page() >= totalPages()">Next</button>
+      </div>
     </mat-card-content>
   </mat-card>
 </div>
