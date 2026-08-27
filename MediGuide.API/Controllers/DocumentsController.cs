@@ -39,6 +39,7 @@ public class DocumentsController : ControllerBase
             return Forbid();
 
         var docs = await _context.Documents
+            .AsNoTracking()
             .Where(d => d.BookingId == bookingId)
             .OrderByDescending(d => d.CreatedAt)
             .Select(d => new DocumentDto(

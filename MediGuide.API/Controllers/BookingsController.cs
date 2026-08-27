@@ -28,6 +28,7 @@ public class BookingsController : ControllerBase
     public async Task<ActionResult<IEnumerable<BookingDto>>> GetAll()
     {
         var query = _context.Bookings
+            .AsNoTracking()
             .Include(b => b.Patient)
             .Include(b => b.ServiceCategory)
             .Include(b => b.Agent)

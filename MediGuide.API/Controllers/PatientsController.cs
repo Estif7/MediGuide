@@ -23,6 +23,7 @@ public class PatientsController : ControllerBase
     public async Task<ActionResult<IEnumerable<PatientDto>>> GetAll()
     {
         var patients = await _context.Patients
+            .AsNoTracking()
             .Where(p => p.IsActive)
             .OrderBy(p => p.FullName)
             .Select(p => new PatientDto(

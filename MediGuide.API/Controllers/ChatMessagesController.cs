@@ -37,6 +37,7 @@ public class ChatMessagesController : ControllerBase
             return Forbid();
 
         var messages = await _context.ChatMessages
+            .AsNoTracking()
             .Where(m => m.BookingId == bookingId)
             .OrderBy(m => m.CreatedAt)
             .Select(m => new ChatMessageDto(

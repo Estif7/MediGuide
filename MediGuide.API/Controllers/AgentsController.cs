@@ -22,7 +22,7 @@ public class AgentsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AgentDto>>> GetAll()
     {
-        var query = _context.Agents.Where(a => a.IsActive);
+        var query = _context.Agents.AsNoTracking().Where(a => a.IsActive);
 
         if (!User.IsInRole("Admin"))
         {
@@ -57,6 +57,7 @@ public class AgentsController : ControllerBase
         }
 
         var agent = await _context.Agents
+            .AsNoTracking()
             .Where(a => a.Id == id)
             .Select(a => new AgentDto(
                 a.Id,

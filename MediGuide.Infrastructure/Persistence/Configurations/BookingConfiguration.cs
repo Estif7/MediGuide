@@ -10,6 +10,8 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
     {
         builder.ToTable("Bookings");
 
+        builder.HasIndex(x => x.Status);
+        builder.HasIndex(x => new { x.AgentId, x.Status });
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Amount).HasPrecision(18, 2);
