@@ -28,3 +28,13 @@ public record CreateBookingDto(
 public record UpdateBookingStatusDto(
     [Required] BookingStatus Status
 );
+
+public record BookingQueryParams(
+    int Page = 1,
+    int PageSize = 20,
+    BookingStatus? Status = null,
+    string? PatientName = null,
+    string? AgentName = null,
+    string SortBy = "CreatedAt",
+    string SortDir = "desc"
+);

@@ -58,7 +58,7 @@ export class Dashboard implements OnInit {
 
   reload() {
     this.bookingService.getAll().subscribe({
-      next: (d) => this.bookings.set(d),
+      next: (d) => this.bookings.set(d.items),
       error: () => this.message.set('Failed to load bookings'),
     });
     this.patientService.getAll().subscribe({

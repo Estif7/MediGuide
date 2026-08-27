@@ -23,11 +23,16 @@ public class BookingsController : ControllerBase
         _authorizationService = authorizationService;
     }
 
+    private const int MaxPageSize = 100;
+
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<BookingDto>>> GetAll()
+    public async Task<ActionResult<PagedResult<BookingDto>>> GetAll([FromQuery] BookingQueryParams query)
     {
-        var query = _context.Bookings
+        var page = query.Page < 1 ? 1 : query.Page;
+        var pageSize = query.PageSize < 1 ? 20 : Math.Min(query.PageSize, MaxPageSize);
+
+        var bookingsQuery = _context.Bookings
             .AsNoTracking()
             .Include(b => b.Patient)
             .Include(b => b.ServiceCategory)
@@ -37,15 +42,39 @@ public class BookingsController : ControllerBase
         if (!User.IsInRole("Admin"))
         {
             if (Guid.TryParse(User.FindFirst("patientId")?.Value, out var patientId))
-                query = query.Where(booking => booking.PatientId == patientId);
+                bookingsQuery = bookingsQuery.Where(b => b.PatientId == patientId);
             else if (Guid.TryParse(User.FindFirst("agentId")?.Value, out var agentId))
-                query = query.Where(booking => booking.AgentId == agentId);
+                bookingsQuery = bookingsQuery.Where(b => b.AgentId == agentId);
             else
                 return Forbid();
         }
 
-        var bookings = await query
-            .OrderByDescending(b => b.CreatedAt)
+        if (query.Status.HasValue)
+            bookingsQuery = bookingsQuery.Where(b => b.Status == query.Status.Value);
+
+        // Name search only meaningful for Admin (patients/agents are already scoped to themselves)
+        if (User.IsInRole("Admin"))
+        {
+            if (!string.IsNullOrWhiteSpace(query.PatientName))
+                bookingsQuery = bookingsQuery.Where(b => EF.Functions.ILike(b.Patient.FullName, $"%{query.PatientName}%"));
+
+            if (!string.IsNullOrWhiteSpace(query.AgentName))
+                bookingsQuery = bookingsQuery.Where(b => b.Agent != null && EF.Functions.ILike(b.Agent.FullName, $"%{query.AgentName}%"));
+        }
+
+        bookingsQuery = (query.SortBy, query.SortDir.ToLowerInvariant()) switch
+        {
+            ("Status", "asc") => bookingsQuery.OrderBy(b => b.Status),
+            ("Status", _) => bookingsQuery.OrderByDescending(b => b.Status),
+            (_, "asc") => bookingsQuery.OrderBy(b => b.CreatedAt),
+            _ => bookingsQuery.OrderByDescending(b => b.CreatedAt),
+        };
+
+        var totalCount = await bookingsQuery.CountAsync();
+
+        var bookings = await bookingsQuery
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(b => new BookingDto(
                 b.Id,
                 b.PatientId,
@@ -61,7 +90,7 @@ public class BookingsController : ControllerBase
                 b.CreatedAt))
             .ToListAsync();
 
-        return Ok(bookings);
+        return Ok(new PagedResult<BookingDto>(bookings, totalCount, page, pageSize));
     }
 
     [Authorize]

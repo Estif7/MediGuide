@@ -59,11 +59,7 @@ export class Dashboard implements OnInit {
   loadBookings() {
     this.bookingService.getAll().subscribe({
       next: (data) => {
-        const patientId = this.user()?.patientId;
-        const mine = patientId
-          ? data.filter((b) => b.patientId === patientId)
-          : data;
-        this.bookings.set(mine);
+        this.bookings.set(data.items);
       },
       error: () => this.message.set('Failed to load bookings'),
     });

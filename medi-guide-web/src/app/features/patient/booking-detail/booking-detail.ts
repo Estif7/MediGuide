@@ -108,13 +108,6 @@ export class BookingDetail implements OnInit {
     });
   }
 
-  confirmPayment() {
-    this.bookingService.confirmPayment(this.id()).subscribe({
-      next: (b) => { this.booking.set(b); this.message.set('Payment confirmed'); },
-      error: (e) => this.message.set(e.error || 'Failed'),
-    });
-  }
-
   assignAgent() {
     const agentId = this.selectedAgentId();
     if (!agentId) {

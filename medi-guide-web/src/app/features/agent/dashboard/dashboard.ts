@@ -31,7 +31,7 @@ export class Dashboard implements OnInit {
   loadBookings() {
     this.bookingService.getAll().subscribe({
       next: (data) => {
-        this.bookings.set(data);
+        this.bookings.set(data.items);
       },
       error: () => this.message.set('Failed to load bookings'),
     });
