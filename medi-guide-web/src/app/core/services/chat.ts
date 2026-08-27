@@ -1,15 +1,21 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { ChatMessage } from '../models/chat-message.model';
+import { ChatMessage, CursorPagedResult } from '../models/chat-message.model';
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
   private readonly http = inject(HttpClient);
   private readonly api = environment.apiUrl;
 
-  getByBooking(bookingId: string) {
-    return this.http.get<ChatMessage[]>(`${this.api}/chatmessages/booking/${bookingId}`);
+  getByBooking(bookingId: string, before?: string, pageSize = 30) {
+    let params = new HttpParams().set('pageSize', pageSize);
+    if (before) params = params.set('before', before);
+
+    return this.http.get<CursorPagedResult<ChatMessage>>(
+      `${this.api}/chatmessages/booking/${bookingId}`,
+      { params }
+    );
   }
 
   send(bookingId: string, content: string) {

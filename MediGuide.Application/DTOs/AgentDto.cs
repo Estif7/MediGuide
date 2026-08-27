@@ -10,3 +10,9 @@ public record AgentDto(
     bool IsAvailable,
     bool IsActive
 );
+
+public record AgentQueryParams(
+    int Page = 1,
+    int PageSize = 20,
+    string? Name = null
+);

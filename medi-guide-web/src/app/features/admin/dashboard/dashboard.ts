@@ -48,6 +48,9 @@ export class Dashboard implements OnInit {
   pageSize = 10;
   statusFilter = signal<BookingStatus | null>(null);
 
+  patientsTotalCount = signal(0);
+  agentsTotalCount = signal(0);
+
   patients = signal<PatientDto[]>([]);
   agents = signal<AgentDto[]>([]);
   message = signal<string | null>(null);
@@ -79,11 +82,17 @@ export class Dashboard implements OnInit {
     this.loadBookings();
 
     this.patientService.getAll().subscribe({
-      next: (d) => this.patients.set(d),
+      next: (d) => {
+        this.patients.set(d.items);
+        this.patientsTotalCount.set(d.totalCount);
+      },
       error: () => this.message.set('Failed to load patients'),
     });
     this.agentService.getAll().subscribe({
-      next: (d) => this.agents.set(d),
+      next: (d) => {
+        this.agents.set(d.items);
+        this.agentsTotalCount.set(d.totalCount);
+      },
       error: () => this.message.set('Failed to load agents'),
     });
   }

@@ -15,3 +15,8 @@ public record ChatMessageDto(
 public record CreateChatMessageDto(
     [Required, StringLength(4000)] string Content
 );
+
+public record ChatMessageQueryParams(
+    DateTime? Before = null,
+    int PageSize = 30
+);

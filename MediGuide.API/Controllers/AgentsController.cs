@@ -18,22 +18,35 @@ public class AgentsController : ControllerBase
         _context = context;
     }
 
+    private const int MaxPageSize = 100;
+
     [Authorize(Roles = "Admin,Agent")]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AgentDto>>> GetAll()
+    public async Task<ActionResult<PagedResult<AgentDto>>> GetAll([FromQuery] AgentQueryParams query)
     {
-        var query = _context.Agents.AsNoTracking().Where(a => a.IsActive);
+        var page = query.Page < 1 ? 1 : query.Page;
+        var pageSize = query.PageSize < 1 ? 20 : Math.Min(query.PageSize, MaxPageSize);
+
+        var agentsQuery = _context.Agents.AsNoTracking().Where(a => a.IsActive);
 
         if (!User.IsInRole("Admin"))
         {
             if (!Guid.TryParse(User.FindFirst("agentId")?.Value, out var callerAgentId))
                 return Forbid();
 
-            query = query.Where(a => a.Id == callerAgentId);
+            agentsQuery = agentsQuery.Where(a => a.Id == callerAgentId);
+        }
+        else if (!string.IsNullOrWhiteSpace(query.Name))
+        {
+            agentsQuery = agentsQuery.Where(a => EF.Functions.ILike(a.FullName, $"%{query.Name}%"));
         }
 
-        var agents = await query
+        var totalCount = await agentsQuery.CountAsync();
+
+        var agents = await agentsQuery
             .OrderBy(a => a.FullName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(a => new AgentDto(
                 a.Id,
                 a.FullName,
@@ -43,7 +56,7 @@ public class AgentsController : ControllerBase
                 a.IsActive))
             .ToListAsync();
 
-        return Ok(agents);
+        return Ok(new PagedResult<AgentDto>(agents, totalCount, page, pageSize));
     }
 
     [Authorize]

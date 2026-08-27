@@ -6,3 +6,8 @@ public record PagedResult<T>(
     int Page,
     int PageSize
 );
+
+public record CursorPagedResult<T>(
+    IReadOnlyList<T> Items,
+    bool HasMore
+);

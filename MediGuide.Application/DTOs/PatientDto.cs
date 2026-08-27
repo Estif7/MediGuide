@@ -17,3 +17,9 @@ public record CreatePatientDto(
     [Required, StringLength(32)] string PhoneNumber,
     [StringLength(10)] string? PreferredLanguage
 );
+
+public record PatientQueryParams(
+    int Page = 1,
+    int PageSize = 20,
+    string? Name = null
+);
