@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MediGuide.API.Hubs;
 using Microsoft.AspNetCore.SignalR;
-
+using MediGuide.API.Services;
 namespace MediGuide.API.Controllers;
 
 [ApiController]
@@ -18,16 +18,20 @@ public class ChatMessagesController : ControllerBase
     private readonly MediGuideDbContext _context;
     private readonly IAuthorizationService _authorizationService;
     private readonly IHubContext<BookingHub> _hubContext;
+    private readonly INotificationService _notificationService;
+
     private const int MaxChatPageSize = 100;
 
     public ChatMessagesController(
         MediGuideDbContext context,
         IAuthorizationService authorizationService,
-        IHubContext<BookingHub> hubContext)
+        IHubContext<BookingHub> hubContext,
+        INotificationService notificationService)
     {
         _context = context;
         _authorizationService = authorizationService;
         _hubContext = hubContext;
+        _notificationService = notificationService;
     }
 
     [HttpGet("booking/{bookingId:guid}")]
@@ -109,6 +113,36 @@ public class ChatMessagesController : ControllerBase
         await _hubContext.Clients.Group(BookingHub.GroupName(bookingId))
             .SendAsync("ReceiveMessage", result);
 
+        if (!BookingHub.HasActiveViewers(bookingId))
+        {
+            var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+            var agentUserId = booking.AgentId.HasValue
+                ? await _notificationService.GetUserIdForAgentAsync(booking.AgentId.Value)
+                : null;
+
+            // Notify whichever participant did NOT send this message
+            var recipientId = patientUserId != userId ? patientUserId : agentUserId;
+
+            if (recipientId is not null)
+            {
+                var preview = message.Content.Length > 80 ? message.Content[..80] + "…" : message.Content;
+                await _notificationService.NotifyAsync(
+                    recipientId, "ChatMessage", $"New message on your booking: {preview}", bookingId);
+            }
+        }
+
         return CreatedAtAction(nameof(GetByBooking), new { bookingId }, result);
+    }
+
+    private async Task<string?> GetOtherParticipantUserIdAsync(Booking booking, string senderUserId)
+    {
+        // Find the ApplicationUser tied to the patient, and the one tied to the assigned agent (if any).
+        var patientUser = await _context.Users.FirstOrDefaultAsync(u => u.PatientId == booking.PatientId);
+        var agentUser = booking.AgentId.HasValue
+            ? await _context.Users.FirstOrDefaultAsync(u => u.AgentId == booking.AgentId)
+            : null;
+
+        if (patientUser?.Id != senderUserId) return patientUser?.Id;
+        return agentUser?.Id;
     }
 }

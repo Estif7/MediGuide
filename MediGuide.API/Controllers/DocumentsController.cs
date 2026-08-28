@@ -4,6 +4,7 @@ using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MediGuide.API.Services;
 
 namespace MediGuide.API.Controllers;
 
@@ -15,15 +16,17 @@ public class DocumentsController : ControllerBase
     private readonly MediGuideDbContext _context;
     private readonly IWebHostEnvironment _env;
     private readonly IAuthorizationService _authorizationService;
-
+    private readonly INotificationService _notificationService;
     public DocumentsController(
         MediGuideDbContext context,
         IWebHostEnvironment env,
-        IAuthorizationService authorizationService)
+        IAuthorizationService authorizationService,
+        INotificationService notificationService)
     {
         _context = context;
         _env = env;
         _authorizationService = authorizationService;
+        _notificationService = notificationService;
     }
 
     // GET all documents for a booking
@@ -106,6 +109,16 @@ public class DocumentsController : ControllerBase
             document.FileSizeBytes,
             document.UploadedBy,
             document.CreatedAt);
+
+        var recipientId = uploadedBy == "Patient"
+            ? (booking.AgentId.HasValue ? await _notificationService.GetUserIdForAgentAsync(booking.AgentId.Value) : null)
+            : await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+
+        if (recipientId is not null)
+        {
+            await _notificationService.NotifyAsync(
+                recipientId, "DocumentUploaded", $"A new document was uploaded: {document.FileName}", bookingId);
+        }
 
         return CreatedAtAction(nameof(GetByBooking), new { bookingId }, result);
     }

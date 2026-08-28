@@ -4,6 +4,7 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from './auth';
 import { ChatMessage } from '../models/chat-message.model';
 import { Booking } from '../models/booking.model';
+import { NotificationDto } from '../models/notification.model';
 
 @Injectable({ providedIn: 'root' })
 export class SignalRService {
@@ -12,6 +13,7 @@ export class SignalRService {
 
   private currentReceiveMessageHandler?: (message: ChatMessage) => void;
   private currentBookingUpdatedHandler?: (booking: Booking) => void;
+  private currentNotificationHandler?: (notification: NotificationDto) => void;
 
   connect() {
     if (this.hubConnection) return;
@@ -64,10 +66,26 @@ export class SignalRService {
     }
   }
 
+  onNotificationReceived(callback: (notification: NotificationDto) => void) {
+    if (this.currentNotificationHandler) {
+      this.hubConnection?.off('NotificationReceived', this.currentNotificationHandler);
+    }
+    this.currentNotificationHandler = callback;
+    this.hubConnection?.on('NotificationReceived', callback);
+  }
+
+  offNotificationReceived() {
+    if (this.currentNotificationHandler) {
+      this.hubConnection?.off('NotificationReceived', this.currentNotificationHandler);
+      this.currentNotificationHandler = undefined;
+    }
+  }
+
   disconnect() {
     this.hubConnection?.stop();
     this.hubConnection = undefined;
     this.currentReceiveMessageHandler = undefined;
     this.currentBookingUpdatedHandler = undefined;
+    this.currentNotificationHandler = undefined;
   }
 }

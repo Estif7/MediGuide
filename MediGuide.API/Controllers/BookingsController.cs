@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using MediGuide.API.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using MediGuide.API.Services;
+using Microsoft.AspNetCore.Identity;
 
 namespace MediGuide.API.Controllers;
 
@@ -17,15 +19,21 @@ public class BookingsController : ControllerBase
     private readonly MediGuideDbContext _context;
     private readonly IAuthorizationService _authorizationService;
     private readonly IHubContext<BookingHub> _hubContext;
+    private readonly INotificationService _notificationService;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     public BookingsController(
         MediGuideDbContext context,
         IAuthorizationService authorizationService,
-        IHubContext<BookingHub> hubContext)
+        IHubContext<BookingHub> hubContext,
+        INotificationService notificationService,
+        UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _authorizationService = authorizationService;
         _hubContext = hubContext;
+        _notificationService = notificationService;
+        _userManager = userManager;
     }
  
     private const int MaxPageSize = 100;
@@ -195,6 +203,14 @@ public async Task<ActionResult<BookingDto>> AssignAgent(Guid id, [FromBody] Assi
     await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
         .SendAsync("BookingUpdated", ToDto(booking));
 
+    var agentUserId = await _notificationService.GetUserIdForAgentAsync(agent.Id);
+    if (agentUserId is not null)
+    {
+        await _notificationService.NotifyAsync(
+            agentUserId, "BookingAssigned",
+            $"You've been assigned a new booking ({booking.ServiceCategory.Name}).", booking.Id);
+    }
+
     return Ok(ToDto(booking));
 }
 
@@ -218,6 +234,14 @@ public async Task<ActionResult<BookingDto>> Accept(Guid id)
 
     await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
         .SendAsync("BookingUpdated", ToDto(booking));
+
+    var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+    if (patientUserId is not null)
+    {
+        await _notificationService.NotifyAsync(
+            patientUserId, "BookingStatusChanged",
+            "Your booking is now in progress.", booking.Id);
+    }
 
     return Ok(ToDto(booking));
 }
@@ -243,6 +267,14 @@ public async Task<ActionResult<BookingDto>> Decline(Guid id)
 
     await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
         .SendAsync("BookingUpdated", ToDto(booking));
+    
+    var admins = await _userManager.GetUsersInRoleAsync("Admin");
+    foreach (var admin in admins)
+    {
+        await _notificationService.NotifyAsync(
+            admin.Id, "BookingDeclined",
+            "An agent declined a booking assignment — needs reassignment.", booking.Id);
+    }
 
     return Ok(ToDto(booking));
 }
@@ -276,7 +308,15 @@ public async Task<ActionResult<BookingDto>> Refer(Guid id, [FromBody] AssignAgen
     await _context.Entry(booking).Reference(b => b.Agent).LoadAsync();
 
     await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
-    .SendAsync("BookingUpdated", ToDto(booking));
+        .SendAsync("BookingUpdated", ToDto(booking));
+
+    var referredUserId = await _notificationService.GetUserIdForAgentAsync(other.Id);
+    if (referredUserId is not null)
+    {
+        await _notificationService.NotifyAsync(
+            referredUserId, "BookingReferred",
+            "A booking has been referred to you.", booking.Id);
+    }
 
     return Ok(ToDto(booking));
 }
@@ -332,7 +372,15 @@ public async Task<ActionResult<BookingDto>> UpdateBookingStatus(Guid id, UpdateB
     await _context.SaveChangesAsync();
 
     await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
-    .SendAsync("BookingUpdated", ToDto(booking));
+        .SendAsync("BookingUpdated", ToDto(booking));
+
+    var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+    if (patientUserId is not null)
+    {
+        await _notificationService.NotifyAsync(
+            patientUserId, "BookingStatusChanged",
+            $"Your booking status changed to {booking.Status}.", booking.Id);
+    }
     
     return Ok(ToDto(booking));
 }

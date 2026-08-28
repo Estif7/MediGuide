@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Scalar.AspNetCore;
 using Microsoft.OpenApi;
+using MediGuide.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -218,6 +219,9 @@ builder.Services.AddCors(options =>
 
 // SignalR
 builder.Services.AddSignalR();
+
+builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var app = builder.Build();
 
