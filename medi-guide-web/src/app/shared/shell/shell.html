@@ -15,7 +15,7 @@
 
   <div class="user-panel">
     <button mat-icon-button [matMenuTriggerFor]="notifMenu" aria-label="Notifications">
-      <mat-icon [matBadge]="unreadCount() > 0 ? unreadCount() : null" matBadgeColor="warn" matBadgeSize="small">
+      <mat-icon [matBadge]="unreadCount() > 0 ? unreadBadge() : null" matBadgeColor="warn">
         notifications
       </mat-icon>
     </button>
@@ -37,6 +37,23 @@
         </button>
       } @empty {
         <button mat-menu-item disabled>No notifications yet</button>
+      }
+
+      @if (hasMoreNotifications() || notifications().length > 5) {
+        <div class="notif-footer" (click)="$event.stopPropagation()">
+          @if (hasMoreNotifications()) {
+            <button mat-button type="button" (click)="loadMoreNotifications()" [disabled]="notifLoadingMore()">
+              @if (notifLoadingMore()) {
+                <mat-progress-spinner diameter="16" mode="indeterminate" />
+              } @else {
+                Load more
+              }
+            </button>
+          }
+          @if (notifications().length > 5) {
+            <button mat-button type="button" (click)="collapseNotifications()">Show less</button>
+          }
+        </div>
       }
     </mat-menu>
 

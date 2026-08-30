@@ -5,12 +5,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatListModule } from '@angular/material/list';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatePipe } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { SignalRService } from '../../core/services/signalr';
 import { NotificationService } from '../../core/services/notification';
 import { NotificationDto } from '../../core/models/notification.model';
+
+const NOTIF_PAGE_SIZE = 5;
 
 @Component({
   selector: 'app-shell',
@@ -25,6 +28,7 @@ import { NotificationDto } from '../../core/models/notification.model';
     MatBadgeModule,
     MatMenuModule,
     MatListModule,
+    MatProgressSpinnerModule,
     DatePipe,
   ],
   templateUrl: './shell.html',
@@ -44,6 +48,16 @@ export class Shell implements OnInit, OnDestroy {
   notifications = signal<NotificationDto[]>([]);
   unreadCount = signal(0);
 
+  notifPage = signal(1);
+  notifTotalCount = signal(0);
+  notifLoadingMore = signal(false);
+  hasMoreNotifications = computed(
+    () => this.notifications().length < this.notifTotalCount()
+  );
+  unreadBadge = computed(
+    () => (this.unreadCount() > 99 ? '99+' : this.unreadCount())
+  );
+
   homeLink = computed(() => {
     if (this.isAdmin()) return '/admin';
     if (this.isAgent()) return '/agent';
@@ -58,7 +72,8 @@ export class Shell implements OnInit, OnDestroy {
     this.loadRecent();
 
     this.signalR.onNotificationReceived((notification) => {
-      this.notifications.update((list) => [notification, ...list].slice(0, 20));
+      this.notifications.update((list) => [notification, ...list]);
+      this.notifTotalCount.update((n) => n + 1);
       this.unreadCount.update((n) => n + 1);
     });
   }
@@ -74,9 +89,35 @@ export class Shell implements OnInit, OnDestroy {
   }
 
   loadRecent() {
-    this.notificationService.getAll(1, 20).subscribe({
-      next: (result) => this.notifications.set(result.items),
+    this.notifPage.set(1);
+
+    this.notificationService.getAll(1, NOTIF_PAGE_SIZE).subscribe({
+      next: (result) => {
+        this.notifications.set(result.items);
+        this.notifTotalCount.set(result.totalCount);
+      },
     });
+  }
+
+  loadMoreNotifications() {
+    if (this.notifLoadingMore() || !this.hasMoreNotifications()) return;
+
+    const nextPage = this.notifPage() + 1;
+    this.notifLoadingMore.set(true);
+
+    this.notificationService.getAll(nextPage, NOTIF_PAGE_SIZE).subscribe({
+      next: (result) => {
+        this.notifications.update((list) => [...list, ...result.items]);
+        this.notifTotalCount.set(result.totalCount);
+        this.notifPage.set(nextPage);
+        this.notifLoadingMore.set(false);
+      },
+      error: () => this.notifLoadingMore.set(false),
+    });
+  }
+
+  collapseNotifications() {
+    this.loadRecent();
   }
 
   onNotificationClick(notification: NotificationDto) {
@@ -96,8 +137,6 @@ export class Shell implements OnInit, OnDestroy {
       const url = `${path}/${notification.bookingId}`;
 
       if (this.router.url === url) {
-        // Already on this booking — force the component to reload its data
-        // instead of silently no-op'ing on an identical URL.
         this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
           this.router.navigate([path, notification.bookingId]);
         });
