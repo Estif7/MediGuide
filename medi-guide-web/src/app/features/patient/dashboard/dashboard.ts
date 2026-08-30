@@ -8,9 +8,8 @@ import { MatListModule } from '@angular/material/list';
 import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
-import { CategoryService } from '../../../core/services/category';
 import { BookingService } from '../../../core/services/booking';
-import { ServiceCategory } from '../../../core/models/service-category.model';
+import { ReferenceDataService } from '../../../core/services/reference-data';
 import { Booking } from '../../../core/models/booking.model';
 import { bookingStatusLabel } from '../../../core/utils/status-label';
 
@@ -32,11 +31,11 @@ import { bookingStatusLabel } from '../../../core/utils/status-label';
 })
 export class Dashboard implements OnInit {
   private readonly auth = inject(AuthService);
-  private readonly categoryService = inject(CategoryService);
   private readonly bookingService = inject(BookingService);
+  private readonly referenceData = inject(ReferenceDataService);
 
   user = this.auth.currentUser;
-  categories = signal<ServiceCategory[]>([]);
+  categories = this.referenceData.categories;
   bookings = signal<Booking[]>([]);
   selectedCategoryId = signal<string>('');
   notes = signal('');
@@ -45,15 +44,8 @@ export class Dashboard implements OnInit {
   statusLabel = bookingStatusLabel;
 
   ngOnInit() {
-    this.loadCategories();
+    this.referenceData.loadCategories();
     this.loadBookings();
-  }
-
-  loadCategories() {
-    this.categoryService.getAll().subscribe({
-      next: (data) => this.categories.set(data),
-      error: () => this.message.set('Failed to load categories'),
-    });
   }
 
   loadBookings() {

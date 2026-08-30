@@ -12,7 +12,8 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
 import { BookingService } from '../../../core/services/booking';
 import { PatientService, PatientDto } from '../../../core/services/patient';
-import { AgentService, AgentDto } from '../../../core/services/agent';
+import { AgentService } from '../../../core/services/agent';
+import { ReferenceDataService } from '../../../core/services/reference-data';
 import { Booking, BookingStatus } from '../../../core/models/booking.model';
 import { bookingStatusLabel } from '../../../core/utils/status-label';
 
@@ -39,6 +40,7 @@ export class Dashboard implements OnInit {
   private readonly bookingService = inject(BookingService);
   private readonly patientService = inject(PatientService);
   private readonly agentService = inject(AgentService);
+  private readonly referenceData = inject(ReferenceDataService);
 
   user = this.auth.currentUser;
 
@@ -49,10 +51,11 @@ export class Dashboard implements OnInit {
   statusFilter = signal<BookingStatus | null>(null);
 
   patientsTotalCount = signal(0);
-  agentsTotalCount = signal(0);
 
   patients = signal<PatientDto[]>([]);
-  agents = signal<AgentDto[]>([]);
+  agents = this.referenceData.agents;
+  agentsTotalCount = computed(() => this.agents().length);
+
   message = signal<string | null>(null);
   loading = signal(false);
   statusLabel = bookingStatusLabel;
@@ -80,6 +83,7 @@ export class Dashboard implements OnInit {
 
   reload() {
     this.loadBookings();
+    this.referenceData.loadAgents();
 
     this.patientService.getAll().subscribe({
       next: (d) => {
@@ -87,13 +91,6 @@ export class Dashboard implements OnInit {
         this.patientsTotalCount.set(d.totalCount);
       },
       error: () => this.message.set('Failed to load patients'),
-    });
-    this.agentService.getAll().subscribe({
-      next: (d) => {
-        this.agents.set(d.items);
-        this.agentsTotalCount.set(d.totalCount);
-      },
-      error: () => this.message.set('Failed to load agents'),
     });
   }
 
@@ -159,7 +156,13 @@ export class Dashboard implements OnInit {
           this.agentEmail.set('');
           this.agentPhone.set('');
           this.agentPassword.set('');
-          this.reload();
+          this.referenceData.refreshAgents();
+          this.patientService.getAll().subscribe({
+            next: (d) => {
+              this.patients.set(d.items);
+              this.patientsTotalCount.set(d.totalCount);
+            },
+          });
         },
         error: (err) => {
           this.loading.set(false);

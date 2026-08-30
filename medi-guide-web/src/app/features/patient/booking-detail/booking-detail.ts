@@ -28,6 +28,7 @@ import { AuthService } from '../../../core/services/auth';
 import { Booking, BookingStatus } from '../../../core/models/booking.model';
 import { ChatMessage } from '../../../core/models/chat-message.model';
 import { DocumentItem } from '../../../core/models/document.model';
+import { ReferenceDataService } from '../../../core/services/reference-data';
 
 import {
   bookingStatusLabel,
@@ -57,14 +58,15 @@ export class BookingDetail implements OnInit, OnDestroy {
   private readonly bookingService = inject(BookingService);
   private readonly chatService = inject(ChatService);
   private readonly documentService = inject(DocumentService);
-  private readonly agentService = inject(AgentService);
+  // private readonly agentService = inject(AgentService);
+  private readonly referenceData = inject(ReferenceDataService);
   private readonly auth = inject(AuthService);
   private readonly signalR = inject(SignalRService);
 
   @ViewChild('chatScroll')
   chatScrollRef?: ElementRef<HTMLDivElement>;
 
-  agents = signal<AgentDto[]>([]);
+  agents = this.referenceData.agents;
   selectedAgentId = signal('');
 
   isAdmin = this.auth.isAdmin;
@@ -88,9 +90,7 @@ export class BookingDetail implements OnInit, OnDestroy {
   ngOnInit() {
     this.loadAll();
 
-    this.agentService.getAll().subscribe({
-      next: (a) => this.agents.set(a.items),
-    });
+    this.referenceData.loadAgents();
 
     // Register SignalR handlers before joining the booking so that
     // incoming events cannot arrive before the handlers are attached.
