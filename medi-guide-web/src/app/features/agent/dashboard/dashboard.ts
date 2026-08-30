@@ -1,4 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatListModule } from '@angular/material/list';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
 import { BookingService } from '../../../core/services/booking';
@@ -8,7 +11,7 @@ import { bookingStatusLabel } from '../../../core/utils/status-label';
 @Component({
   selector: 'app-agent-dashboard',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, MatCardModule, MatListModule, MatButtonModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -28,8 +31,7 @@ export class Dashboard implements OnInit {
   loadBookings() {
     this.bookingService.getAll().subscribe({
       next: (data) => {
-        // Show all for now; later we can filter by agentId
-        this.bookings.set(data);
+        this.bookings.set(data.items);
       },
       error: () => this.message.set('Failed to load bookings'),
     });

@@ -5,6 +5,10 @@ using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using MediGuide.API.Hubs;
+using Microsoft.AspNetCore.SignalR;
+using MediGuide.API.Services;
+using Microsoft.AspNetCore.Identity;
 
 namespace MediGuide.API.Controllers;
 
@@ -13,21 +17,77 @@ namespace MediGuide.API.Controllers;
 public class BookingsController : ControllerBase
 {
     private readonly MediGuideDbContext _context;
+    private readonly IAuthorizationService _authorizationService;
+    private readonly IHubContext<BookingHub> _hubContext;
+    private readonly INotificationService _notificationService;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public BookingsController(MediGuideDbContext context)
+    public BookingsController(
+        MediGuideDbContext context,
+        IAuthorizationService authorizationService,
+        IHubContext<BookingHub> hubContext,
+        INotificationService notificationService,
+        UserManager<ApplicationUser> userManager)
     {
         _context = context;
+        _authorizationService = authorizationService;
+        _hubContext = hubContext;
+        _notificationService = notificationService;
+        _userManager = userManager;
     }
+ 
+    private const int MaxPageSize = 100;
 
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<BookingDto>>> GetAll()
+    public async Task<ActionResult<PagedResult<BookingDto>>> GetAll([FromQuery] BookingQueryParams query)
     {
-        var bookings = await _context.Bookings
+        var page = query.Page < 1 ? 1 : query.Page;
+        var pageSize = query.PageSize < 1 ? 20 : Math.Min(query.PageSize, MaxPageSize);
+
+        var bookingsQuery = _context.Bookings
+            .AsNoTracking()
             .Include(b => b.Patient)
             .Include(b => b.ServiceCategory)
             .Include(b => b.Agent)
-            .OrderByDescending(b => b.CreatedAt)
+            .AsQueryable();
+
+        if (!User.IsInRole("Admin"))
+        {
+            if (Guid.TryParse(User.FindFirst("patientId")?.Value, out var patientId))
+                bookingsQuery = bookingsQuery.Where(b => b.PatientId == patientId);
+            else if (Guid.TryParse(User.FindFirst("agentId")?.Value, out var agentId))
+                bookingsQuery = bookingsQuery.Where(b => b.AgentId == agentId);
+            else
+                return Forbid();
+        }
+
+        if (query.Status.HasValue)
+            bookingsQuery = bookingsQuery.Where(b => b.Status == query.Status.Value);
+
+        // Name search only meaningful for Admin (patients/agents are already scoped to themselves)
+        if (User.IsInRole("Admin"))
+        {
+            if (!string.IsNullOrWhiteSpace(query.PatientName))
+                bookingsQuery = bookingsQuery.Where(b => EF.Functions.ILike(b.Patient.FullName, $"%{query.PatientName}%"));
+
+            if (!string.IsNullOrWhiteSpace(query.AgentName))
+                bookingsQuery = bookingsQuery.Where(b => b.Agent != null && EF.Functions.ILike(b.Agent.FullName, $"%{query.AgentName}%"));
+        }
+
+        bookingsQuery = (query.SortBy, query.SortDir.ToLowerInvariant()) switch
+        {
+            ("Status", "asc") => bookingsQuery.OrderBy(b => b.Status),
+            ("Status", _) => bookingsQuery.OrderByDescending(b => b.Status),
+            (_, "asc") => bookingsQuery.OrderBy(b => b.CreatedAt),
+            _ => bookingsQuery.OrderByDescending(b => b.CreatedAt),
+        };
+
+        var totalCount = await bookingsQuery.CountAsync();
+
+        var bookings = await bookingsQuery
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(b => new BookingDto(
                 b.Id,
                 b.PatientId,
@@ -43,42 +103,27 @@ public class BookingsController : ControllerBase
                 b.CreatedAt))
             .ToListAsync();
 
-        return Ok(bookings);
+        return Ok(new PagedResult<BookingDto>(bookings, totalCount, page, pageSize));
     }
 
     [Authorize]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<BookingDto>> GetById(Guid id)
     {
-        var booking = await _context.Bookings
-            .Include(b => b.Patient)
-            .Include(b => b.ServiceCategory)
-            .Include(b => b.Agent)
-            .Where(b => b.Id == id)
-            .Select(b => new BookingDto(
-                b.Id,
-                b.PatientId,
-                b.Patient.FullName,
-                b.ServiceCategoryId,
-                b.ServiceCategory.Name,
-                b.AgentId,
-                b.Agent != null ? b.Agent.FullName : null,
-                b.ResponseTime,
-                b.Status,
-                b.Amount,
-                b.Notes,
-                b.CreatedAt))
-            .FirstOrDefaultAsync();
+        var booking = await LoadBooking(id);
 
         if (booking is null)
             return NotFound();
 
-        return Ok(booking);
+        var authorizationResult = await _authorizationService.AuthorizeAsync(User, booking, "BookingAccess");
+        if (!authorizationResult.Succeeded)
+            return Forbid();
+
+        return Ok(ToDto(booking));
     }
 
 
-    [Authorize] 
-    // [Authorize(Roles = "Patient")]
+    [Authorize(Roles = "Patient,Admin")]
     [HttpPost]
     public async Task<ActionResult<BookingDto>> Create(CreateBookingDto dto)
     {
@@ -86,6 +131,12 @@ public class BookingsController : ControllerBase
         var patient = await _context.Patients.FindAsync(dto.PatientId);
         if (patient is null)
             return BadRequest("Patient not found.");
+
+        if (!User.IsInRole("Admin")
+            && (!Guid.TryParse(User.FindFirst("patientId")?.Value, out var patientId) || patientId != dto.PatientId))
+        {
+            return Forbid();
+        }
 
         // Validate category exists and is active
         var category = await _context.ServiceCategories.FindAsync(dto.ServiceCategoryId);
@@ -126,64 +177,211 @@ public class BookingsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = booking.Id }, result);
     }
 
-    // Optional: simple status update (useful later for assignment)
-    [HttpPatch("{id:guid}/status")]
-    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] BookingStatus newStatus)
+    
+
+    [Authorize(Roles = "Admin")]
+[HttpPatch("{id:guid}/assign")]
+public async Task<ActionResult<BookingDto>> AssignAgent(Guid id, [FromBody] AssignAgentDto dto)
+{
+    var booking = await LoadBooking(id);
+    if (booking is null) return NotFound();
+
+    if (booking.Status != BookingStatus.Paid)
+        return BadRequest("Booking must be paid before an agent can be assigned.");
+
+    var agent = await _context.Agents.FindAsync(dto.AgentId);
+    if (agent is null || !agent.IsActive)
+        return BadRequest("Agent not found or inactive.");
+
+    booking.AgentId = agent.Id;
+    booking.Status = BookingStatus.Assigned;
+    booking.UpdatedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+
+    await _context.Entry(booking).Reference(b => b.Agent).LoadAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("BookingUpdated", ToDto(booking));
+
+    var agentUserId = await _notificationService.GetUserIdForAgentAsync(agent.Id);
+    if (agentUserId is not null)
     {
-        var booking = await _context.Bookings.FindAsync(id);
-        if (booking is null)
-            return NotFound();
-
-        booking.Status = newStatus;
-        booking.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-        return NoContent();
+        await _notificationService.NotifyAsync(
+            agentUserId, "BookingAssigned",
+            $"You've been assigned a new booking ({booking.ServiceCategory.Name}).", booking.Id);
     }
 
-    [Authorize(Roles = "Admin,Agent")]
-    [HttpPatch("{id:guid}/assign")]
-    public async Task<ActionResult<BookingDto>> AssignAgent(Guid id, [FromBody] AssignAgentDto dto)
+    return Ok(ToDto(booking));
+}
+
+[Authorize(Roles = "Agent")]
+[HttpPatch("{id:guid}/accept")]
+public async Task<ActionResult<BookingDto>> Accept(Guid id)
+{
+    var booking = await LoadBooking(id);
+    if (booking is null) return NotFound();
+
+    var agentId = GetCurrentAgentId();
+    if (agentId is null || booking.AgentId != agentId)
+        return Forbid();
+
+    if (booking.Status != BookingStatus.Assigned)
+        return BadRequest("Only assigned bookings can be accepted.");
+
+    booking.Status = BookingStatus.InProgress;
+    booking.UpdatedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("BookingUpdated", ToDto(booking));
+
+    var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+    if (patientUserId is not null)
     {
-        var booking = await _context.Bookings
-            .Include(b => b.Patient)
-            .Include(b => b.ServiceCategory)
-            .Include(b => b.Agent)
-            .FirstOrDefaultAsync(b => b.Id == id);
-
-        if (booking is null)
-            return NotFound("Booking not found.");
-
-        var agent = await _context.Agents.FindAsync(dto.AgentId);
-        if (agent is null || !agent.IsActive)
-            return BadRequest("Agent not found or inactive.");
-
-        if (!agent.IsAvailable)
-            return BadRequest("Agent is currently not available.");
-
-        booking.AgentId = agent.Id;
-        booking.Status = BookingStatus.Assigned;
-        booking.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        // Reload agent name for the response
-        await _context.Entry(booking).Reference(b => b.Agent).LoadAsync();
-
-        var result = new BookingDto(
-            booking.Id,
-            booking.PatientId,
-            booking.Patient.FullName,
-            booking.ServiceCategoryId,
-            booking.ServiceCategory.Name,
-            booking.AgentId,
-            booking.Agent?.FullName,
-            booking.ResponseTime,
-            booking.Status,
-            booking.Amount,
-            booking.Notes,
-            booking.CreatedAt);
-
-        return Ok(result);
+        await _notificationService.NotifyAsync(
+            patientUserId, "BookingStatusChanged",
+            "Your booking is now in progress.", booking.Id);
     }
+
+    return Ok(ToDto(booking));
+}
+
+[Authorize(Roles = "Agent")]
+[HttpPatch("{id:guid}/decline")]
+public async Task<ActionResult<BookingDto>> Decline(Guid id)
+{
+    var booking = await LoadBooking(id);
+    if (booking is null) return NotFound();
+
+    var agentId = GetCurrentAgentId();
+    if (agentId is null || booking.AgentId != agentId)
+        return Forbid();
+
+    if (booking.Status != BookingStatus.Assigned)
+        return BadRequest("Only assigned bookings can be declined.");
+
+    booking.AgentId = null;
+    booking.Status = BookingStatus.Paid; // back to admin pool
+    booking.UpdatedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("BookingUpdated", ToDto(booking));
+    
+    var admins = await _userManager.GetUsersInRoleAsync("Admin");
+    foreach (var admin in admins)
+    {
+        await _notificationService.NotifyAsync(
+            admin.Id, "BookingDeclined",
+            "An agent declined a booking assignment — needs reassignment.", booking.Id);
+    }
+
+    return Ok(ToDto(booking));
+}
+
+[Authorize(Roles = "Agent")]
+[HttpPatch("{id:guid}/refer")]
+public async Task<ActionResult<BookingDto>> Refer(Guid id, [FromBody] AssignAgentDto dto)
+{
+    var booking = await LoadBooking(id);
+    if (booking is null) return NotFound();
+
+    var agentId = GetCurrentAgentId();
+    if (agentId is null || booking.AgentId != agentId)
+        return Forbid();
+
+    if (booking.Status != BookingStatus.Assigned && booking.Status != BookingStatus.InProgress)
+        return BadRequest("Booking cannot be referred in its current status.");
+
+    if (dto.AgentId == agentId)
+        return BadRequest("Cannot refer to yourself.");
+
+    var other = await _context.Agents.FindAsync(dto.AgentId);
+    if (other is null || !other.IsActive)
+        return BadRequest("Target agent not found or inactive.");
+
+    booking.AgentId = other.Id;
+    booking.Status = BookingStatus.Assigned;
+    booking.UpdatedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+
+    await _context.Entry(booking).Reference(b => b.Agent).LoadAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("BookingUpdated", ToDto(booking));
+
+    var referredUserId = await _notificationService.GetUserIdForAgentAsync(other.Id);
+    if (referredUserId is not null)
+    {
+        await _notificationService.NotifyAsync(
+            referredUserId, "BookingReferred",
+            "A booking has been referred to you.", booking.Id);
+    }
+
+    return Ok(ToDto(booking));
+}
+
+private async Task<Booking?> LoadBooking(Guid id) =>
+    await _context.Bookings
+        .Include(b => b.Patient)
+        .Include(b => b.ServiceCategory)
+        .Include(b => b.Agent)
+        .FirstOrDefaultAsync(b => b.Id == id);
+
+private Guid? GetCurrentAgentId()
+{
+    var claim = User.FindFirst("agentId")?.Value;
+    return Guid.TryParse(claim, out var id) ? id : null;
+}
+
+private static BookingDto ToDto(Booking b) => new(
+    b.Id,
+    b.PatientId,
+    b.Patient.FullName,
+    b.ServiceCategoryId,
+    b.ServiceCategory.Name,
+    b.AgentId,
+    b.Agent?.FullName,
+    b.ResponseTime,
+    b.Status,
+    b.Amount,
+    b.Notes,
+    b.CreatedAt);
+
+private static readonly BookingStatus[] AdminAssignableStatuses =
+{
+    BookingStatus.PendingPayment,
+    BookingStatus.Paid,
+    BookingStatus.Assigned,
+    BookingStatus.InProgress
+};
+
+[Authorize(Roles = "Admin")]
+[HttpPatch("{id:guid}/booking-status")]
+public async Task<ActionResult<BookingDto>> UpdateBookingStatus(Guid id, UpdateBookingStatusDto dto)
+{
+    if (!AdminAssignableStatuses.Contains(dto.Status))
+        return BadRequest($"Status must be one of: {string.Join(", ", AdminAssignableStatuses)}");
+
+    var booking = await LoadBooking(id);
+    if (booking is null)
+        return NotFound();
+
+    booking.Status = dto.Status;
+    booking.UpdatedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("BookingUpdated", ToDto(booking));
+
+    var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+    if (patientUserId is not null)
+    {
+        await _notificationService.NotifyAsync(
+            patientUserId, "BookingStatusChanged",
+            $"Your booking status changed to {booking.Status}.", booking.Id);
+    }
+    
+    return Ok(ToDto(booking));
+}
 }

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { PagedResult } from '../models/booking.model';
 
 export interface AgentDto {
   id: string;
@@ -18,13 +19,24 @@ export interface RegisterAgentRequest {
   password: string;
 }
 
+export interface AgentQuery {
+  page?: number;
+  pageSize?: number;
+  name?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AgentService {
   private readonly http = inject(HttpClient);
   private readonly api = environment.apiUrl;
 
-  getAll() {
-    return this.http.get<AgentDto[]>(`${this.api}/agents`);
+  getAll(query: AgentQuery = {}) {
+    let params = new HttpParams();
+    if (query.page != null) params = params.set('page', query.page);
+    if (query.pageSize != null) params = params.set('pageSize', query.pageSize);
+    if (query.name) params = params.set('name', query.name);
+
+    return this.http.get<PagedResult<AgentDto>>(`${this.api}/agents`, { params });
   }
 
   register(dto: RegisterAgentRequest) {

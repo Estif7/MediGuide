@@ -1,0 +1,52 @@
+<header class="app-header">
+  <a class="brand" [routerLink]="homeLink()">Medi-Guide</a>
+
+  <nav class="nav-links" aria-label="Primary navigation">
+    @if (isPatient()) {
+      <a routerLink="/patient" routerLinkActive="active">My dashboard</a>
+    }
+    @if (isAgent()) {
+      <a routerLink="/agent" routerLinkActive="active">Agent dashboard</a>
+    }
+    @if (isAdmin()) {
+      <a routerLink="/admin" routerLinkActive="active">Admin</a>
+    }
+  </nav>
+
+  <div class="user-panel">
+    <button mat-icon-button [matMenuTriggerFor]="notifMenu" aria-label="Notifications">
+      <mat-icon [matBadge]="unreadCount() > 0 ? unreadCount() : null" matBadgeColor="warn" matBadgeSize="small">
+        notifications
+      </mat-icon>
+    </button>
+
+    <mat-menu #notifMenu="matMenu" class="notif-menu">
+      <div class="notif-header" (click)="$event.stopPropagation()">
+        <span>Notifications</span>
+        @if (unreadCount() > 0) {
+          <button mat-button type="button" (click)="markAllRead()">Mark all read</button>
+        }
+      </div>
+
+      @for (n of notifications(); track n.id) {
+        <button mat-menu-item [class.unread]="!n.isRead" (click)="onNotificationClick(n)">
+          <div class="notif-item">
+            <span class="notif-message">{{ n.message }}</span>
+            <small class="notif-time">{{ n.createdAt | date: 'short' }}</small>
+          </div>
+        </button>
+      } @empty {
+        <button mat-menu-item disabled>No notifications yet</button>
+      }
+    </mat-menu>
+
+    <span class="user-name">{{ user()?.fullName }}</span>
+    <!-- <button mat-stroked-button color="primary" type="button" (click)="logout()">Logout</button> -->
+    <button mat-stroked-button class="logout-button" type="button" (click)="logout()">Logout</button>
+
+  </div>
+</header>
+
+<main class="app-shell-main">
+  <router-outlet />
+</main>

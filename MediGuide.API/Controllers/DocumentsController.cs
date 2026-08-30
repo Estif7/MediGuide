@@ -4,6 +4,9 @@ using MediGuide.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MediGuide.API.Services;
+using MediGuide.API.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace MediGuide.API.Controllers;
 
@@ -14,18 +17,38 @@ public class DocumentsController : ControllerBase
 {
     private readonly MediGuideDbContext _context;
     private readonly IWebHostEnvironment _env;
+    private readonly IAuthorizationService _authorizationService;
+    private readonly INotificationService _notificationService;
+    private readonly IHubContext<BookingHub> _hubContext;
 
-    public DocumentsController(MediGuideDbContext context, IWebHostEnvironment env)
+    public DocumentsController(
+        MediGuideDbContext context,
+        IWebHostEnvironment env,
+        IAuthorizationService authorizationService,
+        INotificationService notificationService,
+        IHubContext<BookingHub> hubContext)
     {
         _context = context;
         _env = env;
+        _authorizationService = authorizationService;
+        _notificationService = notificationService;
+        _hubContext = hubContext;
     }
 
     // GET all documents for a booking
     [HttpGet("booking/{bookingId:guid}")]
     public async Task<ActionResult<IEnumerable<DocumentDto>>> GetByBooking(Guid bookingId)
     {
+        var booking = await _context.Bookings.FindAsync(bookingId);
+        if (booking is null)
+            return NotFound("Booking not found.");
+
+        var authorizationResult = await _authorizationService.AuthorizeAsync(User, booking, "BookingAccess");
+        if (!authorizationResult.Succeeded)
+            return Forbid();
+
         var docs = await _context.Documents
+            .AsNoTracking()
             .Where(d => d.BookingId == bookingId)
             .OrderByDescending(d => d.CreatedAt)
             .Select(d => new DocumentDto(
@@ -48,9 +71,13 @@ public class DocumentsController : ControllerBase
         if (file is null || file.Length == 0)
             return BadRequest("No file uploaded.");
 
-        var bookingExists = await _context.Bookings.AnyAsync(b => b.Id == bookingId);
-        if (!bookingExists)
+        var booking = await _context.Bookings.FindAsync(bookingId);
+        if (booking is null)
             return NotFound("Booking not found.");
+
+        var authorizationResult = await _authorizationService.AuthorizeAsync(User, booking, "BookingAccess");
+        if (!authorizationResult.Succeeded)
+            return Forbid();
 
         // Simple local storage (good enough for now)
         var uploadsFolder = Path.Combine(_env.ContentRootPath, "Uploads");
@@ -65,7 +92,9 @@ public class DocumentsController : ControllerBase
         }
 
         // Who is uploading?
-        var uploadedBy = User.IsInRole("Agent") ? "Agent" : "Patient";
+        var uploadedBy = User.IsInRole("Agent") ? "Agent"
+                    : User.IsInRole("Admin") ? "Admin"
+                    : "Patient";
 
         var document = new Document
         {
@@ -89,6 +118,19 @@ public class DocumentsController : ControllerBase
             document.UploadedBy,
             document.CreatedAt);
 
+        await _hubContext.Clients.Group(BookingHub.GroupName(bookingId))
+            .SendAsync("DocumentUploaded", result);
+
+        var recipientId = uploadedBy == "Patient"
+            ? (booking.AgentId.HasValue ? await _notificationService.GetUserIdForAgentAsync(booking.AgentId.Value) : null)
+            : await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+
+        if (recipientId is not null)
+        {
+            await _notificationService.NotifyAsync(
+                recipientId, "DocumentUploaded", $"A new document was uploaded: {document.FileName}", bookingId);
+        }
+
         return CreatedAtAction(nameof(GetByBooking), new { bookingId }, result);
     }
 
@@ -99,6 +141,14 @@ public class DocumentsController : ControllerBase
         var doc = await _context.Documents.FindAsync(id);
         if (doc is null)
             return NotFound();
+
+        var booking = await _context.Bookings.FindAsync(doc.BookingId);
+        if (booking is null)
+            return NotFound("Booking not found.");
+
+        var authorizationResult = await _authorizationService.AuthorizeAsync(User, booking, "BookingAccess");
+        if (!authorizationResult.Succeeded)
+            return Forbid();
 
         var path = Path.Combine(_env.ContentRootPath, "Uploads", doc.StoragePath);
         if (!System.IO.File.Exists(path))

@@ -1,4 +1,5 @@
 using MediGuide.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace MediGuide.Application.DTOs;
 
@@ -18,8 +19,22 @@ public record BookingDto(
 );
 
 public record CreateBookingDto(
-    Guid PatientId,
-    Guid ServiceCategoryId,
+    [Required] Guid PatientId,
+    [Required] Guid ServiceCategoryId,
     ResponseTime ResponseTime,
-    string? Notes
+    [StringLength(2000)] string? Notes
+);
+
+public record UpdateBookingStatusDto(
+    [Required] BookingStatus Status
+);
+
+public record BookingQueryParams(
+    int Page = 1,
+    int PageSize = 20,
+    BookingStatus? Status = null,
+    string? PatientName = null,
+    string? AgentName = null,
+    string SortBy = "CreatedAt",
+    string SortDir = "desc"
 );

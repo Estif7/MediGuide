@@ -1,81 +1,143 @@
 <div class="page">
-  <header>
-    <h1>Admin Dashboard</h1>
-    <p>Welcome, {{ user()?.fullName }}</p>
-    <button type="button" (click)="logout()">Logout</button>
-  </header>
+  <mat-toolbar color="primary" class="mat-elevation-z2">
+    <span>Welcome, {{ user()?.fullName }} to Admin Dashboard</span>
+  </mat-toolbar>
 
   @if (message()) {
     <div class="message">{{ message() }}</div>
   }
 
-  <section class="stats">
-    <div>Patients: <strong>{{ patients().length }}</strong></div>
-    <div>Agents: <strong>{{ agents().length }}</strong></div>
-    <div>Bookings: <strong>{{ bookings().length }}</strong></div>
-  </section>
+  <div class="dashboard-grid">
+    <mat-card appearance="outlined" class="summary-card">
+      <mat-card-title>Patients</mat-card-title>
+      <mat-card-content>
+        <strong>{{ patientsTotalCount() }}</strong>
+      </mat-card-content>
+    </mat-card>
 
-  <section>
-    <h2>Register Agent</h2>
-    <label>
-      Full name
-      <input [ngModel]="agentName()" (ngModelChange)="agentName.set($event)" />
-    </label>
-    <label>
-      Email
-      <input type="email" [ngModel]="agentEmail()" (ngModelChange)="agentEmail.set($event)" />
-    </label>
-    <label>
-      Phone
-      <input [ngModel]="agentPhone()" (ngModelChange)="agentPhone.set($event)" />
-    </label>
-    <label>
-      Password
-      <input type="password" [ngModel]="agentPassword()" (ngModelChange)="agentPassword.set($event)" />
-    </label>
-    <button type="button" (click)="registerAgent()" [disabled]="loading()">
-      {{ loading() ? 'Saving…' : 'Create Agent' }}
-    </button>
-  </section>
+    <mat-card appearance="outlined" class="summary-card">
+      <mat-card-title>Agents</mat-card-title>
+      <mat-card-content>
+        <strong>{{ agentsTotalCount() }}</strong>
+      </mat-card-content>
+    </mat-card>
 
-  <section>
-    <h2>Agents</h2>
-    <ul>
-      @for (a of agents(); track a.id) {
-        <li>
-          {{ a.fullName }} — {{ a.email }}
-          @if (a.isAvailable) { · Available }
-        </li>
-      } @empty {
-        <li>No agents yet.</li>
-      }
-    </ul>
-  </section>
+    <mat-card appearance="outlined" class="summary-card">
+      <mat-card-title>Bookings</mat-card-title>
+      <mat-card-content>
+        <strong>{{ totalCount() }}</strong>
+      </mat-card-content>
+    </mat-card>
+  </div>
 
-  <section>
-    <h2>Patients</h2>
-    <ul>
-      @for (p of patients(); track p.id) {
-        <li>{{ p.fullName }} — {{ p.email }}</li>
-      } @empty {
-        <li>No patients yet.</li>
-      }
-    </ul>
-  </section>
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Register Agent</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="form-panel">
+        <mat-form-field appearance="outline">
+          <mat-label>Full name</mat-label>
+          <input matInput [ngModel]="agentName()" (ngModelChange)="agentName.set($event)" />
+        </mat-form-field>
 
-  <section>
-    <h2>All Bookings</h2>
-    <ul>
-      @for (b of bookings(); track b.id) {
-        <li>
-          <a [routerLink]="['/admin/bookings', b.id]">
-            {{ b.categoryName }} — {{ b.patientName }} — {{ statusLabel(b.status) }}
-            @if (b.agentName) { · {{ b.agentName }} }
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" [ngModel]="agentEmail()" (ngModelChange)="agentEmail.set($event)" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Phone</mat-label>
+          <input matInput [ngModel]="agentPhone()" (ngModelChange)="agentPhone.set($event)" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" [ngModel]="agentPassword()" (ngModelChange)="agentPassword.set($event)" />
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" type="button" (click)="registerAgent()" [disabled]="loading()">
+            @if (loading()) {
+              <mat-progress-spinner diameter="18" mode="indeterminate" />
+            }
+            {{ loading() ? 'Saving…' : 'Create Agent' }}
+          </button>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <div class="dashboard-grid">
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Agents</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-list>
+          @for (a of agents(); track a.id) {
+            <mat-list-item>
+              <span matListItemTitle>{{ a.fullName }}</span>
+              <span matListItemLine>{{ a.email }}</span>
+            </mat-list-item>
+          } @empty {
+            <mat-list-item>No agents yet.</mat-list-item>
+          }
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Patients</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-list>
+          @for (p of patients(); track p.id) {
+            <mat-list-item>
+              <span matListItemTitle>{{ p.fullName }}</span>
+              <span matListItemLine>{{ p.email }}</span>
+            </mat-list-item>
+          } @empty {
+            <mat-list-item>No patients yet.</mat-list-item>
+          }
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>All Bookings</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field appearance="outline">
+        <mat-label>Filter by status</mat-label>
+        <mat-select [value]="statusFilter()" (selectionChange)="onStatusFilterChange($event.value)">
+          @for (opt of statusOptions; track opt.label) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-list>
+        @for (b of bookings(); track b.id) {
+          <a class="list-item-link" [routerLink]="['/admin/bookings', b.id]">
+            <mat-list-item>
+              <span matListItemTitle>{{ b.categoryName }} · {{ b.patientName }}</span>
+              <span matListItemLine>{{ statusLabel(b.status) }} @if (b.agentName) { · {{ b.agentName }} }</span>
+            </mat-list-item>
           </a>
-        </li>
-      } @empty {
-        <li>No bookings yet.</li>
-      }
-    </ul>
-  </section>
+        } @empty {
+          <mat-list-item>No bookings match this filter.</mat-list-item>
+        }
+      </mat-list>
+
+      <div class="pagination">
+        <button mat-button type="button" (click)="prevPage()" [disabled]="page() <= 1">Previous</button>
+        <span>Page {{ page() }} of {{ totalPages() }} ({{ totalCount() }} total)</span>
+        <button mat-button type="button" (click)="nextPage()" [disabled]="page() >= totalPages()">Next</button>
+      </div>
+    </mat-card-content>
+  </mat-card>
 </div>

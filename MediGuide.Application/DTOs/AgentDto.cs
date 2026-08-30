@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace MediGuide.Application.DTOs;
 
 public record AgentDto(
@@ -9,8 +11,8 @@ public record AgentDto(
     bool IsActive
 );
 
-public record CreateAgentDto(
-    string FullName,
-    string Email,
-    string PhoneNumber
+public record AgentQueryParams(
+    int Page = 1,
+    int PageSize = 20,
+    string? Name = null
 );

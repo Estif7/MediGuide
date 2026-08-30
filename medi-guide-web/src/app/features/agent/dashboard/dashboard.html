@@ -1,34 +1,46 @@
 <div class="page">
-  <header>
-    <h1>Agent Dashboard</h1>
-    <p>Welcome, {{ user()?.fullName }}</p>
-    <button type="button" (click)="logout()">Logout</button>
-  </header>
+  <mat-card appearance="outlined" class="hero-card">
+    <mat-card-content>
+      <div class="hero-title-row">
+        <div>
+          <p>Welcome Agent, {{ user()?.fullName }}</p>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
 
   @if (message()) {
     <div class="message">{{ message() }}</div>
   }
 
-  <section>
-    <h2>Bookings</h2>
+  <div class="summary-grid">
+    <mat-card appearance="outlined">
+      <mat-card-title>Open bookings</mat-card-title>
+      <mat-card-content>
+        <strong>{{ bookings().length }}</strong>
+      </mat-card-content>
+    </mat-card>
+  </div>
 
-    @if (bookings().length === 0) {
-      <p>No bookings yet.</p>
-    } @else {
-      <ul>
-        @for (b of bookings(); track b.id) {
-          <li>
-            <a [routerLink]="['/agent/bookings', b.id]">
-              <strong>{{ b.categoryName }}</strong> —
-              {{ b.patientName }} —
-              {{ statusLabel(b.status) }}
-              @if (b.agentName) {
-                · Agent: {{ b.agentName }}
-              }
+  <mat-card appearance="outlined" class="list-card">
+    <mat-card-header>
+      <mat-card-title>Bookings</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (bookings().length === 0) {
+        <p class="empty-state">No bookings yet.</p>
+      } @else {
+        <mat-list>
+          @for (b of bookings(); track b.id) {
+            <a class="list-item-link" [routerLink]="['/agent/bookings', b.id]">
+              <mat-list-item>
+                <span matListItemTitle>{{ b.categoryName }} · {{ b.patientName }}</span>
+                <span matListItemLine>{{ statusLabel(b.status) }} @if (b.agentName) { · Agent: {{ b.agentName }} }</span>
+              </mat-list-item>
             </a>
-          </li>
-        }
-      </ul>
-    }
-  </section>
+          }
+        </mat-list>
+      }
+    </mat-card-content>
+  </mat-card>
 </div>

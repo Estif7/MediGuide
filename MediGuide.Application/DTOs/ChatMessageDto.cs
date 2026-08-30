@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace MediGuide.Application.DTOs;
 
 public record ChatMessageDto(
@@ -11,5 +13,10 @@ public record ChatMessageDto(
 );
 
 public record CreateChatMessageDto(
-    string Content
+    [Required, StringLength(4000)] string Content
+);
+
+public record ChatMessageQueryParams(
+    DateTime? Before = null,
+    int PageSize = 30
 );

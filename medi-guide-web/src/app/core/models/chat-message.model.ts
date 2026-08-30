@@ -7,3 +7,8 @@ export interface ChatMessage {
   isRead: boolean;
   createdAt: string;
 }
+
+export interface CursorPagedResult<T> {
+  items: T[];
+  hasMore: boolean;
+}

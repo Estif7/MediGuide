@@ -13,6 +13,7 @@ export interface RegisterPatientRequest {
 
 export interface AuthResponse {
   token: string;
+  refreshToken: string;
   email: string;
   fullName: string;
   roles: string[];
