@@ -1,0 +1,20 @@
+@if (loading()) {
+  <div class="state-panel loading">
+    <mat-progress-spinner diameter="32" mode="indeterminate" />
+  </div>
+} @else if (error()) {
+  <div class="state-panel error">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ error() }}</p>
+    @if (retry()) {
+      <button mat-stroked-button type="button" (click)="retry()!()">Retry</button>
+    }
+  </div>
+} @else if (empty()) {
+  <div class="state-panel empty">
+    <mat-icon>{{ emptyIcon() }}</mat-icon>
+    <p>{{ emptyMessage() }}</p>
+  </div>
+} @else {
+  <ng-content />
+}

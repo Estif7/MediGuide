@@ -27,28 +27,37 @@
       <mat-card-title>Request Support</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <div class="form-panel">
-        <mat-form-field appearance="outline">
-          <mat-label>Service</mat-label>
-          <mat-select [ngModel]="selectedCategoryId()" (ngModelChange)="selectedCategoryId.set($event)">
-            <mat-option value="">-- Select --</mat-option>
-            @for (c of categories(); track c.id) {
-              <mat-option [value]="c.id">{{ c.name }} ({{ c.basePrice }} ETB)</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+      <app-state-panel
+        [loading]="categoriesLoading()"
+        [error]="categoriesError()"
+        [empty]="categories().length === 0"
+        emptyMessage="No services available right now."
+        emptyIcon="medical_services"
+        [retry]="referenceData.refreshCategories.bind(referenceData)"
+      >
+        <div class="form-panel">
+          <mat-form-field appearance="outline">
+            <mat-label>Service</mat-label>
+            <mat-select [ngModel]="selectedCategoryId()" (ngModelChange)="selectedCategoryId.set($event)">
+              <mat-option value="">-- Select --</mat-option>
+              @for (c of categories(); track c.id) {
+                <mat-option [value]="c.id">{{ c.name }} ({{ c.basePrice }} ETB)</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Notes</mat-label>
-          <textarea matInput [ngModel]="notes()" (ngModelChange)="notes.set($event)" rows="3"></textarea>
-        </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Notes</mat-label>
+            <textarea matInput [ngModel]="notes()" (ngModelChange)="notes.set($event)" rows="3"></textarea>
+          </mat-form-field>
 
-        <div class="actions">
-          <button mat-flat-button color="primary" type="button" (click)="createBooking()" [disabled]="loading()">
-            {{ loading() ? 'Submitting…' : 'Submit Request' }}
-          </button>
+          <div class="actions">
+            <button mat-flat-button color="primary" type="button" (click)="createBooking()" [disabled]="loading()">
+              {{ loading() ? 'Submitting…' : 'Submit Request' }}
+            </button>
+          </div>
         </div>
-      </div>
+      </app-state-panel>
     </mat-card-content>
   </mat-card>
 
@@ -57,9 +66,14 @@
       <mat-card-title>My Bookings</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      @if (bookings().length === 0) {
-        <p class="empty-state">No bookings yet.</p>
-      } @else {
+      <app-state-panel
+        [loading]="bookingsLoading()"
+        [error]="bookingsError()"
+        [empty]="bookings().length === 0"
+        emptyMessage="No bookings yet."
+        emptyIcon="event_busy"
+        [retry]="loadBookings.bind(this)"
+      >
         <mat-list>
           @for (b of bookings(); track b.id) {
             <a class="list-item-link" [routerLink]="['/patient/bookings', b.id]">
@@ -70,7 +84,7 @@
             </a>
           }
         </mat-list>
-      }
+      </app-state-panel>
     </mat-card-content>
   </mat-card>
 </div>

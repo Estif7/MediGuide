@@ -5,13 +5,14 @@ import { MatListModule } from '@angular/material/list';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
 import { BookingService } from '../../../core/services/booking';
+import { StatePanel } from '../../../shared/state-panel/state-panel';
 import { Booking } from '../../../core/models/booking.model';
 import { bookingStatusLabel } from '../../../core/utils/status-label';
 
 @Component({
   selector: 'app-agent-dashboard',
   standalone: true,
-  imports: [RouterLink, MatCardModule, MatListModule, MatButtonModule],
+  imports: [RouterLink, MatCardModule, MatListModule, MatButtonModule, StatePanel],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -21,7 +22,8 @@ export class Dashboard implements OnInit {
 
   user = this.auth.currentUser;
   bookings = signal<Booking[]>([]);
-  message = signal<string | null>(null);
+  bookingsLoading = signal(false);
+  bookingsError = signal<string | null>(null);
   statusLabel = bookingStatusLabel;
 
   ngOnInit() {
@@ -29,11 +31,18 @@ export class Dashboard implements OnInit {
   }
 
   loadBookings() {
+    this.bookingsLoading.set(true);
+    this.bookingsError.set(null);
+
     this.bookingService.getAll().subscribe({
       next: (data) => {
         this.bookings.set(data.items);
+        this.bookingsLoading.set(false);
       },
-      error: () => this.message.set('Failed to load bookings'),
+      error: () => {
+        this.bookingsError.set('Failed to load bookings');
+        this.bookingsLoading.set(false);
+      },
     });
   }
 

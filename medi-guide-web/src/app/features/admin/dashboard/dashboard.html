@@ -74,16 +74,23 @@
         <mat-card-title>Agents</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <mat-list>
-          @for (a of agents(); track a.id) {
-            <mat-list-item>
-              <span matListItemTitle>{{ a.fullName }}</span>
-              <span matListItemLine>{{ a.email }}</span>
-            </mat-list-item>
-          } @empty {
-            <mat-list-item>No agents yet.</mat-list-item>
-          }
-        </mat-list>
+        <app-state-panel
+          [loading]="agentsLoading()"
+          [error]="agentsError()"
+          [empty]="agents().length === 0"
+          emptyMessage="No agents yet."
+          emptyIcon="support_agent"
+          [retry]="referenceData.refreshAgents.bind(referenceData)"
+        >
+          <mat-list>
+            @for (a of agents(); track a.id) {
+              <mat-list-item>
+                <span matListItemTitle>{{ a.fullName }}</span>
+                <span matListItemLine>{{ a.email }}</span>
+              </mat-list-item>
+            }
+          </mat-list>
+        </app-state-panel>
       </mat-card-content>
     </mat-card>
 
@@ -92,16 +99,23 @@
         <mat-card-title>Patients</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <mat-list>
-          @for (p of patients(); track p.id) {
-            <mat-list-item>
-              <span matListItemTitle>{{ p.fullName }}</span>
-              <span matListItemLine>{{ p.email }}</span>
-            </mat-list-item>
-          } @empty {
-            <mat-list-item>No patients yet.</mat-list-item>
-          }
-        </mat-list>
+        <app-state-panel
+          [loading]="patientsLoading()"
+          [error]="patientsError()"
+          [empty]="patients().length === 0"
+          emptyMessage="No patients yet."
+          emptyIcon="people"
+          [retry]="loadPatients.bind(this)"
+        >
+          <mat-list>
+            @for (p of patients(); track p.id) {
+              <mat-list-item>
+                <span matListItemTitle>{{ p.fullName }}</span>
+                <span matListItemLine>{{ p.email }}</span>
+              </mat-list-item>
+            }
+          </mat-list>
+        </app-state-panel>
       </mat-card-content>
     </mat-card>
   </div>
@@ -120,18 +134,25 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-list>
-        @for (b of bookings(); track b.id) {
-          <a class="list-item-link" [routerLink]="['/admin/bookings', b.id]">
-            <mat-list-item>
-              <span matListItemTitle>{{ b.categoryName }} · {{ b.patientName }}</span>
-              <span matListItemLine>{{ statusLabel(b.status) }} @if (b.agentName) { · {{ b.agentName }} }</span>
-            </mat-list-item>
-          </a>
-        } @empty {
-          <mat-list-item>No bookings match this filter.</mat-list-item>
-        }
-      </mat-list>
+      <app-state-panel
+        [loading]="bookingsLoading()"
+        [error]="bookingsError()"
+        [empty]="bookings().length === 0"
+        emptyMessage="No bookings match this filter."
+        emptyIcon="event_busy"
+        [retry]="loadBookings.bind(this)"
+      >
+        <mat-list>
+          @for (b of bookings(); track b.id) {
+            <a class="list-item-link" [routerLink]="['/admin/bookings', b.id]">
+              <mat-list-item>
+                <span matListItemTitle>{{ b.categoryName }} · {{ b.patientName }}</span>
+                <span matListItemLine>{{ statusLabel(b.status) }} @if (b.agentName) { · {{ b.agentName }} }</span>
+              </mat-list-item>
+            </a>
+          }
+        </mat-list>
+      </app-state-panel>
 
       <div class="pagination">
         <button mat-button type="button" (click)="prevPage()" [disabled]="page() <= 1">Previous</button>

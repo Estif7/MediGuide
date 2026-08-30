@@ -10,6 +10,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
 import { BookingService } from '../../../core/services/booking';
 import { ReferenceDataService } from '../../../core/services/reference-data';
+import { StatePanel } from '../../../shared/state-panel/state-panel';
 import { Booking } from '../../../core/models/booking.model';
 import { bookingStatusLabel } from '../../../core/utils/status-label';
 
@@ -25,6 +26,7 @@ import { bookingStatusLabel } from '../../../core/utils/status-label';
     MatSelectModule,
     MatButtonModule,
     MatListModule,
+    StatePanel,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -32,14 +34,20 @@ import { bookingStatusLabel } from '../../../core/utils/status-label';
 export class Dashboard implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly bookingService = inject(BookingService);
-  private readonly referenceData = inject(ReferenceDataService);
+  readonly referenceData = inject(ReferenceDataService);
 
   user = this.auth.currentUser;
   categories = this.referenceData.categories;
+  categoriesLoading = this.referenceData.categoriesLoading;
+  categoriesError = this.referenceData.categoriesError;
+
   bookings = signal<Booking[]>([]);
+  bookingsLoading = signal(false);
+  bookingsError = signal<string | null>(null);
+
   selectedCategoryId = signal<string>('');
   notes = signal('');
-  message = signal<string | null>(null);
+  message = signal<string | null>(null); // success/info toasts only
   loading = signal(false);
   statusLabel = bookingStatusLabel;
 
@@ -49,11 +57,18 @@ export class Dashboard implements OnInit {
   }
 
   loadBookings() {
+    this.bookingsLoading.set(true);
+    this.bookingsError.set(null);
+
     this.bookingService.getAll().subscribe({
       next: (data) => {
         this.bookings.set(data.items);
+        this.bookingsLoading.set(false);
       },
-      error: () => this.message.set('Failed to load bookings'),
+      error: () => {
+        this.bookingsError.set('Failed to load bookings');
+        this.bookingsLoading.set(false);
+      },
     });
   }
 

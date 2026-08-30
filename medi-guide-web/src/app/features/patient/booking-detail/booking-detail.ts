@@ -22,13 +22,13 @@ import { BookingService } from '../../../core/services/booking';
 import { ChatService } from '../../../core/services/chat';
 import { DocumentService } from '../../../core/services/document';
 import { SignalRService } from '../../../core/services/signalr';
-import { AgentService, AgentDto } from '../../../core/services/agent';
 import { AuthService } from '../../../core/services/auth';
+import { ReferenceDataService } from '../../../core/services/reference-data';
+import { StatePanel } from '../../../shared/state-panel/state-panel';
 
 import { Booking, BookingStatus } from '../../../core/models/booking.model';
 import { ChatMessage } from '../../../core/models/chat-message.model';
 import { DocumentItem } from '../../../core/models/document.model';
-import { ReferenceDataService } from '../../../core/services/reference-data';
 
 import {
   bookingStatusLabel,
@@ -48,6 +48,7 @@ import {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    StatePanel,
   ],
   templateUrl: './booking-detail.html',
   styleUrl: './booking-detail.scss',
@@ -58,7 +59,6 @@ export class BookingDetail implements OnInit, OnDestroy {
   private readonly bookingService = inject(BookingService);
   private readonly chatService = inject(ChatService);
   private readonly documentService = inject(DocumentService);
-  // private readonly agentService = inject(AgentService);
   private readonly referenceData = inject(ReferenceDataService);
   private readonly auth = inject(AuthService);
   private readonly signalR = inject(SignalRService);
@@ -73,13 +73,21 @@ export class BookingDetail implements OnInit, OnDestroy {
   isAgent = this.auth.isAgent;
 
   booking = signal<Booking | null>(null);
+  bookingLoading = signal(false);
+  bookingError = signal<string | null>(null);
+
   messages = signal<ChatMessage[]>([]);
+  messagesLoading = signal(false);
+  messagesError = signal<string | null>(null);
   hasMoreMessages = signal(false);
   loadingMore = signal(false);
+
   documents = signal<DocumentItem[]>([]);
+  documentsLoading = signal(false);
+  documentsError = signal<string | null>(null);
 
   newMessage = signal('');
-  message = signal<string | null>(null);
+  message = signal<string | null>(null); // success/info toasts only now
   loading = signal(false);
 
   statusLabel = bookingStatusLabel;
@@ -88,29 +96,21 @@ export class BookingDetail implements OnInit, OnDestroy {
   allowedStatuses: BookingStatus[] = [0, 1, 2, 3];
 
   ngOnInit() {
-    this.loadAll();
-
+    this.loadBooking();
+    this.loadMessages();
+    this.loadDocuments();
     this.referenceData.loadAgents();
 
-    // Register SignalR handlers before joining the booking so that
-    // incoming events cannot arrive before the handlers are attached.
     this.signalR.onReceiveMessage((msg) => {
       if (msg.bookingId !== this.id()) return;
-
-      // Prevent duplicates when the sender receives its own message
-      // through both HTTP and SignalR.
       if (this.messages().some((m) => m.id === msg.id)) return;
 
       this.messages.update((list) => [...list, msg]);
-
-      // Wait for Angular to render the new message before measuring
-      // scrollHeight.
       setTimeout(() => this.scrollToBottom());
     });
 
     this.signalR.onBookingUpdated((updated) => {
       if (updated.id !== this.id()) return;
-
       this.booking.set(updated);
     });
 
@@ -121,7 +121,6 @@ export class BookingDetail implements OnInit, OnDestroy {
       this.documents.update((list) => [doc, ...list]);
     });
 
-    // joinBooking() should wait for the SignalR connection to be ready.
     this.signalR.joinBooking(this.id()).catch((err) => {
       console.error('Failed to join booking SignalR group', err);
     });
@@ -129,47 +128,68 @@ export class BookingDetail implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.signalR.leaveBooking(this.id());
-
     this.signalR.offReceiveMessage();
     this.signalR.offBookingUpdated();
     this.signalR.offDocumentUploaded();
   }
 
-  loadAll() {
-    const bookingId = this.id();
+  loadBooking() {
+    this.bookingLoading.set(true);
+    this.bookingError.set(null);
 
-    this.bookingService.getById(bookingId).subscribe({
-      next: (b) => this.booking.set(b),
-      error: () => this.message.set('Booking not found'),
+    this.bookingService.getById(this.id()).subscribe({
+      next: (b) => {
+        this.booking.set(b);
+        this.bookingLoading.set(false);
+      },
+      error: () => {
+        this.bookingError.set('Booking not found');
+        this.bookingLoading.set(false);
+      },
     });
+  }
 
-    this.chatService.getByBooking(bookingId).subscribe({
+  loadMessages() {
+    this.messagesLoading.set(true);
+    this.messagesError.set(null);
+
+    this.chatService.getByBooking(this.id()).subscribe({
       next: (result) => {
         this.messages.set(result.items);
         this.hasMoreMessages.set(result.hasMore);
-
-        // Allow the message list to render before scrolling.
+        this.messagesLoading.set(false);
         setTimeout(() => this.scrollToBottom());
       },
-      error: () => this.message.set('Failed to load messages'),
+      error: () => {
+        this.messagesError.set('Failed to load messages');
+        this.messagesLoading.set(false);
+      },
     });
+  }
 
-    this.documentService.getByBooking(bookingId).subscribe({
-      next: (d) => this.documents.set(d),
+  loadDocuments() {
+    this.documentsLoading.set(true);
+    this.documentsError.set(null);
+
+    this.documentService.getByBooking(this.id()).subscribe({
+      next: (d) => {
+        this.documents.set(d);
+        this.documentsLoading.set(false);
+      },
+      error: () => {
+        this.documentsError.set('Failed to load documents');
+        this.documentsLoading.set(false);
+      },
     });
   }
 
   loadOlderMessages() {
     const oldest = this.messages()[0];
-
     if (!oldest || this.loadingMore()) return;
 
     this.loadingMore.set(true);
 
     const container = this.chatScrollRef?.nativeElement;
-
-    // Preserve the user's current visual position while older messages
-    // are inserted above the existing messages.
     const prevScrollHeight = container?.scrollHeight ?? 0;
 
     this.chatService.getByBooking(this.id(), oldest.createdAt).subscribe({
@@ -180,9 +200,7 @@ export class BookingDetail implements OnInit, OnDestroy {
 
         setTimeout(() => {
           if (!container) return;
-
-          container.scrollTop =
-            container.scrollHeight - prevScrollHeight;
+          container.scrollTop = container.scrollHeight - prevScrollHeight;
         });
       },
       error: () => {
@@ -194,32 +212,19 @@ export class BookingDetail implements OnInit, OnDestroy {
   onChatScroll(event: Event) {
     const el = event.target as HTMLDivElement;
 
-    if (
-      el.scrollTop < 60 &&
-      this.hasMoreMessages() &&
-      !this.loadingMore()
-    ) {
+    if (el.scrollTop < 60 && this.hasMoreMessages() && !this.loadingMore()) {
       this.loadOlderMessages();
     }
   }
 
   private scrollToBottom() {
     const el = this.chatScrollRef?.nativeElement;
-
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-    }
+    if (el) el.scrollTop = el.scrollHeight;
   }
 
   isMine(m: ChatMessage): boolean {
-    if (this.isAdmin()) {
-      return m.senderRole === 'Admin';
-    }
-
-    if (this.isAgent()) {
-      return m.senderRole === 'Agent';
-    }
-
+    if (this.isAdmin()) return m.senderRole === 'Admin';
+    if (this.isAgent()) return m.senderRole === 'Agent';
     return m.senderRole === 'Patient';
   }
 
@@ -229,26 +234,19 @@ export class BookingDetail implements OnInit, OnDestroy {
 
   sendMessage() {
     const content = this.newMessage().trim();
-
     if (!content) return;
 
     this.loading.set(true);
 
     this.chatService.send(this.id(), content).subscribe({
       next: (msg) => {
-        // The message may also arrive through SignalR. The SignalR
-        // handler performs ID-based deduplication.
         this.messages.update((list) => {
-          if (list.some((m) => m.id === msg.id)) {
-            return list;
-          }
-
+          if (list.some((m) => m.id === msg.id)) return list;
           return [...list, msg];
         });
 
         this.newMessage.set('');
         this.loading.set(false);
-
         setTimeout(() => this.scrollToBottom());
       },
       error: () => {
@@ -261,7 +259,6 @@ export class BookingDetail implements OnInit, OnDestroy {
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-
     if (!file) return;
 
     this.loading.set(true);
@@ -285,7 +282,6 @@ export class BookingDetail implements OnInit, OnDestroy {
 
   assignAgent() {
     const agentId = this.selectedAgentId();
-
     if (!agentId) {
       this.message.set('Select an agent');
       return;
@@ -312,9 +308,7 @@ export class BookingDetail implements OnInit, OnDestroy {
         this.booking.set(b);
         this.message.set('Booking accepted');
       },
-      error: (e) => {
-        this.message.set(e.error || 'Failed');
-      },
+      error: (e) => this.message.set(e.error || 'Failed'),
     });
   }
 
@@ -324,15 +318,12 @@ export class BookingDetail implements OnInit, OnDestroy {
         this.booking.set(b);
         this.message.set('Booking declined');
       },
-      error: (e) => {
-        this.message.set(e.error || 'Failed');
-      },
+      error: (e) => this.message.set(e.error || 'Failed'),
     });
   }
 
   refer() {
     const agentId = this.selectedAgentId();
-
     if (!agentId) {
       this.message.set('Select an agent');
       return;
@@ -343,9 +334,7 @@ export class BookingDetail implements OnInit, OnDestroy {
         this.booking.set(b);
         this.message.set('Referred to another agent');
       },
-      error: (e) => {
-        this.message.set(e.error || 'Failed');
-      },
+      error: (e) => this.message.set(e.error || 'Failed'),
     });
   }
 
@@ -354,34 +343,22 @@ export class BookingDetail implements OnInit, OnDestroy {
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-
         a.href = url;
         a.download = doc.fileName;
         a.click();
-
         window.URL.revokeObjectURL(url);
       },
-      error: () => {
-        this.message.set('Download failed');
-      },
+      error: () => this.message.set('Download failed'),
     });
   }
 
   updateStatus(newStatus: BookingStatus) {
-    this.bookingService
-      .updateBookingStatus(this.id(), newStatus)
-      .subscribe({
-        next: (updated) => {
-          this.booking.set(updated);
-          this.message.set(
-            `Status updated to ${this.statusLabel(newStatus)}`
-          );
-        },
-        error: (err) => {
-          this.message.set(
-            err.error?.title || 'Failed to update status'
-          );
-        },
-      });
+    this.bookingService.updateBookingStatus(this.id(), newStatus).subscribe({
+      next: (updated) => {
+        this.booking.set(updated);
+        this.message.set(`Status updated to ${this.statusLabel(newStatus)}`);
+      },
+      error: (err) => this.message.set(err.error?.title || 'Failed to update status'),
+    });
   }
 }

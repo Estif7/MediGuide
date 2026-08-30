@@ -14,6 +14,7 @@ import { BookingService } from '../../../core/services/booking';
 import { PatientService, PatientDto } from '../../../core/services/patient';
 import { AgentService } from '../../../core/services/agent';
 import { ReferenceDataService } from '../../../core/services/reference-data';
+import { StatePanel } from '../../../shared/state-panel/state-panel';
 import { Booking, BookingStatus } from '../../../core/models/booking.model';
 import { bookingStatusLabel } from '../../../core/utils/status-label';
 
@@ -31,6 +32,7 @@ import { bookingStatusLabel } from '../../../core/utils/status-label';
     MatSelectModule,
     MatListModule,
     MatProgressSpinnerModule,
+    StatePanel,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -40,21 +42,30 @@ export class Dashboard implements OnInit {
   private readonly bookingService = inject(BookingService);
   private readonly patientService = inject(PatientService);
   private readonly agentService = inject(AgentService);
-  private readonly referenceData = inject(ReferenceDataService);
+
+  // Public because the template needs access to refreshAgents().
+  readonly referenceData = inject(ReferenceDataService);
 
   user = this.auth.currentUser;
 
   bookings = signal<Booking[]>([]);
+  bookingsLoading = signal(false);
+  bookingsError = signal<string | null>(null);
   totalCount = signal(0);
   page = signal(1);
   pageSize = 10;
   statusFilter = signal<BookingStatus | null>(null);
 
   patientsTotalCount = signal(0);
-
   patients = signal<PatientDto[]>([]);
+  patientsLoading = signal(false);
+  patientsError = signal<string | null>(null);
+
+  // Agent state is owned by ReferenceDataService.
   agents = this.referenceData.agents;
   agentsTotalCount = computed(() => this.agents().length);
+  agentsLoading = this.referenceData.agentsLoading;
+  agentsError = this.referenceData.agentsError;
 
   message = signal<string | null>(null);
   loading = signal(false);
@@ -70,7 +81,9 @@ export class Dashboard implements OnInit {
     { value: 5, label: bookingStatusLabel(5) },
   ];
 
-  totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize)));
+  totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.totalCount() / this.pageSize)),
+  );
 
   agentName = signal('');
   agentEmail = signal('');
@@ -84,17 +97,13 @@ export class Dashboard implements OnInit {
   reload() {
     this.loadBookings();
     this.referenceData.loadAgents();
-
-    this.patientService.getAll().subscribe({
-      next: (d) => {
-        this.patients.set(d.items);
-        this.patientsTotalCount.set(d.totalCount);
-      },
-      error: () => this.message.set('Failed to load patients'),
-    });
+    this.loadPatients();
   }
 
   loadBookings() {
+    this.bookingsLoading.set(true);
+    this.bookingsError.set(null);
+
     this.bookingService
       .getAll({
         page: this.page(),
@@ -107,9 +116,30 @@ export class Dashboard implements OnInit {
         next: (d) => {
           this.bookings.set(d.items);
           this.totalCount.set(d.totalCount);
+          this.bookingsLoading.set(false);
         },
-        error: () => this.message.set('Failed to load bookings'),
+        error: () => {
+          this.bookingsError.set('Failed to load bookings');
+          this.bookingsLoading.set(false);
+        },
       });
+  }
+
+  loadPatients() {
+    this.patientsLoading.set(true);
+    this.patientsError.set(null);
+
+    this.patientService.getAll().subscribe({
+      next: (d) => {
+        this.patients.set(d.items);
+        this.patientsTotalCount.set(d.totalCount);
+        this.patientsLoading.set(false);
+      },
+      error: () => {
+        this.patientsError.set('Failed to load patients');
+        this.patientsLoading.set(false);
+      },
+    });
   }
 
   onStatusFilterChange(value: BookingStatus | null) {
@@ -152,21 +182,20 @@ export class Dashboard implements OnInit {
         next: () => {
           this.loading.set(false);
           this.message.set('Agent registered successfully');
+
           this.agentName.set('');
           this.agentEmail.set('');
           this.agentPhone.set('');
           this.agentPassword.set('');
+
           this.referenceData.refreshAgents();
-          this.patientService.getAll().subscribe({
-            next: (d) => {
-              this.patients.set(d.items);
-              this.patientsTotalCount.set(d.totalCount);
-            },
-          });
+          this.loadPatients();
         },
         error: (err) => {
           this.loading.set(false);
-          this.message.set(err.error?.[0] || err.error || 'Failed to register agent');
+          this.message.set(
+            err.error?.[0] || err.error || 'Failed to register agent',
+          );
         },
       });
   }
