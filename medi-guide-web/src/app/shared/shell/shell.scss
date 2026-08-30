@@ -60,6 +60,20 @@
   min-height: calc(100vh - 88px);
 }
 
+.logout-button {
+  color: white !important;
+  border: 1px solid white !important;
+  background-color: transparent !important;
+  transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+  color: white !important;
+  background-color: #b91c1c !important;
+  border-color: #b91c1c !important;
+}
+
+
 @media (max-width: 720px) {
   .app-header {
     flex-wrap: wrap;

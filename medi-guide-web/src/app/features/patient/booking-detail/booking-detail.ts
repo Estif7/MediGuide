@@ -1,5 +1,12 @@
 import {
-  Component, inject, signal, OnInit, OnDestroy, AfterViewChecked, input, ViewChild, ElementRef,
+  Component,
+  inject,
+  signal,
+  OnInit,
+  OnDestroy,
+  input,
+  ViewChild,
+  ElementRef,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -10,16 +17,22 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 import { BookingService } from '../../../core/services/booking';
 import { ChatService } from '../../../core/services/chat';
 import { DocumentService } from '../../../core/services/document';
 import { SignalRService } from '../../../core/services/signalr';
+import { AgentService, AgentDto } from '../../../core/services/agent';
+import { AuthService } from '../../../core/services/auth';
+
 import { Booking, BookingStatus } from '../../../core/models/booking.model';
 import { ChatMessage } from '../../../core/models/chat-message.model';
 import { DocumentItem } from '../../../core/models/document.model';
-import { AgentService, AgentDto } from '../../../core/services/agent';
-import { AuthService } from '../../../core/services/auth';
-import { bookingStatusLabel, responseTimeLabel } from '../../../core/utils/status-label';
+
+import {
+  bookingStatusLabel,
+  responseTimeLabel,
+} from '../../../core/utils/status-label';
 
 @Component({
   selector: 'app-booking-detail',
@@ -38,7 +51,7 @@ import { bookingStatusLabel, responseTimeLabel } from '../../../core/utils/statu
   templateUrl: './booking-detail.html',
   styleUrl: './booking-detail.scss',
 })
-export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
+export class BookingDetail implements OnInit, OnDestroy {
   id = input.required<string>();
 
   private readonly bookingService = inject(BookingService);
@@ -48,11 +61,12 @@ export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
   private readonly auth = inject(AuthService);
   private readonly signalR = inject(SignalRService);
 
-  @ViewChild('chatScroll') chatScrollRef?: ElementRef<HTMLDivElement>;
-  private shouldScrollToBottom = false;
+  @ViewChild('chatScroll')
+  chatScrollRef?: ElementRef<HTMLDivElement>;
 
   agents = signal<AgentDto[]>([]);
   selectedAgentId = signal('');
+
   isAdmin = this.auth.isAdmin;
   isAgent = this.auth.isAgent;
 
@@ -61,46 +75,64 @@ export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
   hasMoreMessages = signal(false);
   loadingMore = signal(false);
   documents = signal<DocumentItem[]>([]);
+
   newMessage = signal('');
   message = signal<string | null>(null);
   loading = signal(false);
+
   statusLabel = bookingStatusLabel;
   timeLabel = responseTimeLabel;
+
   allowedStatuses: BookingStatus[] = [0, 1, 2, 3];
 
   ngOnInit() {
     this.loadAll();
-    this.agentService.getAll().subscribe({ next: (a) => this.agents.set(a.items) });
 
-    this.signalR.connect();
-    this.signalR.joinBooking(this.id());
+    this.agentService.getAll().subscribe({
+      next: (a) => this.agents.set(a.items),
+    });
 
+    // Register SignalR handlers before joining the booking so that
+    // incoming events cannot arrive before the handlers are attached.
     this.signalR.onReceiveMessage((msg) => {
       if (msg.bookingId !== this.id()) return;
-      // Avoid duplicating the message we just added optimistically from our own send
+
+      // Prevent duplicates when the sender receives its own message
+      // through both HTTP and SignalR.
       if (this.messages().some((m) => m.id === msg.id)) return;
 
       this.messages.update((list) => [...list, msg]);
-      this.shouldScrollToBottom = true;
+
+      // Wait for Angular to render the new message before measuring
+      // scrollHeight.
+      setTimeout(() => this.scrollToBottom());
     });
 
     this.signalR.onBookingUpdated((updated) => {
       if (updated.id !== this.id()) return;
+
       this.booking.set(updated);
+    });
+
+    this.signalR.onDocumentUploaded((doc) => {
+      if (doc.bookingId !== this.id()) return;
+      if (this.documents().some((d) => d.id === doc.id)) return;
+
+      this.documents.update((list) => [doc, ...list]);
+    });
+
+    // joinBooking() should wait for the SignalR connection to be ready.
+    this.signalR.joinBooking(this.id()).catch((err) => {
+      console.error('Failed to join booking SignalR group', err);
     });
   }
 
   ngOnDestroy() {
     this.signalR.leaveBooking(this.id());
+
     this.signalR.offReceiveMessage();
     this.signalR.offBookingUpdated();
-  }
-
-  ngAfterViewChecked() {
-    if (this.shouldScrollToBottom) {
-      this.scrollToBottom();
-      this.shouldScrollToBottom = false;
-    }
+    this.signalR.offDocumentUploaded();
   }
 
   loadAll() {
@@ -115,7 +147,9 @@ export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
       next: (result) => {
         this.messages.set(result.items);
         this.hasMoreMessages.set(result.hasMore);
-        this.shouldScrollToBottom = true;
+
+        // Allow the message list to render before scrolling.
+        setTimeout(() => this.scrollToBottom());
       },
       error: () => this.message.set('Failed to load messages'),
     });
@@ -127,10 +161,15 @@ export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
 
   loadOlderMessages() {
     const oldest = this.messages()[0];
+
     if (!oldest || this.loadingMore()) return;
 
     this.loadingMore.set(true);
+
     const container = this.chatScrollRef?.nativeElement;
+
+    // Preserve the user's current visual position while older messages
+    // are inserted above the existing messages.
     const prevScrollHeight = container?.scrollHeight ?? 0;
 
     this.chatService.getByBooking(this.id(), oldest.createdAt).subscribe({
@@ -140,28 +179,47 @@ export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
         this.loadingMore.set(false);
 
         setTimeout(() => {
-          if (container) container.scrollTop = container.scrollHeight - prevScrollHeight;
+          if (!container) return;
+
+          container.scrollTop =
+            container.scrollHeight - prevScrollHeight;
         });
       },
-      error: () => this.loadingMore.set(false),
+      error: () => {
+        this.loadingMore.set(false);
+      },
     });
   }
 
   onChatScroll(event: Event) {
     const el = event.target as HTMLDivElement;
-    if (el.scrollTop < 60 && this.hasMoreMessages() && !this.loadingMore()) {
+
+    if (
+      el.scrollTop < 60 &&
+      this.hasMoreMessages() &&
+      !this.loadingMore()
+    ) {
       this.loadOlderMessages();
     }
   }
 
   private scrollToBottom() {
     const el = this.chatScrollRef?.nativeElement;
-    if (el) el.scrollTop = el.scrollHeight;
+
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
   }
 
   isMine(m: ChatMessage): boolean {
-    if (this.isAdmin()) return m.senderRole === 'Admin';
-    if (this.isAgent()) return m.senderRole === 'Agent';
+    if (this.isAdmin()) {
+      return m.senderRole === 'Admin';
+    }
+
+    if (this.isAgent()) {
+      return m.senderRole === 'Agent';
+    }
+
     return m.senderRole === 'Patient';
   }
 
@@ -171,15 +229,27 @@ export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
 
   sendMessage() {
     const content = this.newMessage().trim();
+
     if (!content) return;
 
     this.loading.set(true);
+
     this.chatService.send(this.id(), content).subscribe({
       next: (msg) => {
-        this.messages.update((list) => [...list, msg]);
+        // The message may also arrive through SignalR. The SignalR
+        // handler performs ID-based deduplication.
+        this.messages.update((list) => {
+          if (list.some((m) => m.id === msg.id)) {
+            return list;
+          }
+
+          return [...list, msg];
+        });
+
         this.newMessage.set('');
         this.loading.set(false);
-        this.shouldScrollToBottom = true;
+
+        setTimeout(() => this.scrollToBottom());
       },
       error: () => {
         this.message.set('Failed to send message');
@@ -191,27 +261,38 @@ export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+
     if (!file) return;
 
     this.loading.set(true);
+
     this.documentService.upload(this.id(), file).subscribe({
       next: (doc) => {
-        this.documents.update((list) => [doc, ...list]);
+        this.documents.update((list) => {
+          if (list.some((d) => d.id === doc.id)) return list;
+          return [doc, ...list];
+        });
         this.loading.set(false);
         input.value = '';
       },
       error: () => {
         this.message.set('Upload failed');
         this.loading.set(false);
+        input.value = '';
       },
     });
   }
 
   assignAgent() {
     const agentId = this.selectedAgentId();
-    if (!agentId) { this.message.set('Select an agent'); return; }
+
+    if (!agentId) {
+      this.message.set('Select an agent');
+      return;
+    }
 
     this.loading.set(true);
+
     this.bookingService.assignAgent(this.id(), agentId).subscribe({
       next: (updated) => {
         this.booking.set(updated);
@@ -227,24 +308,44 @@ export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
 
   accept() {
     this.bookingService.accept(this.id()).subscribe({
-      next: (b) => { this.booking.set(b); this.message.set('Booking accepted'); },
-      error: (e) => this.message.set(e.error || 'Failed'),
+      next: (b) => {
+        this.booking.set(b);
+        this.message.set('Booking accepted');
+      },
+      error: (e) => {
+        this.message.set(e.error || 'Failed');
+      },
     });
   }
 
   decline() {
     this.bookingService.decline(this.id()).subscribe({
-      next: (b) => { this.booking.set(b); this.message.set('Booking declined'); },
-      error: (e) => this.message.set(e.error || 'Failed'),
+      next: (b) => {
+        this.booking.set(b);
+        this.message.set('Booking declined');
+      },
+      error: (e) => {
+        this.message.set(e.error || 'Failed');
+      },
     });
   }
 
   refer() {
     const agentId = this.selectedAgentId();
-    if (!agentId) { this.message.set('Select an agent'); return; }
+
+    if (!agentId) {
+      this.message.set('Select an agent');
+      return;
+    }
+
     this.bookingService.refer(this.id(), agentId).subscribe({
-      next: (b) => { this.booking.set(b); this.message.set('Referred to another agent'); },
-      error: (e) => this.message.set(e.error || 'Failed'),
+      next: (b) => {
+        this.booking.set(b);
+        this.message.set('Referred to another agent');
+      },
+      error: (e) => {
+        this.message.set(e.error || 'Failed');
+      },
     });
   }
 
@@ -253,22 +354,34 @@ export class BookingDetail implements OnInit, OnDestroy, AfterViewChecked {
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
+
         a.href = url;
         a.download = doc.fileName;
         a.click();
+
         window.URL.revokeObjectURL(url);
       },
-      error: () => this.message.set('Download failed'),
+      error: () => {
+        this.message.set('Download failed');
+      },
     });
   }
 
   updateStatus(newStatus: BookingStatus) {
-    this.bookingService.updateBookingStatus(this.id(), newStatus).subscribe({
-      next: (updated) => {
-        this.booking.set(updated);
-        this.message.set(`Status updated to ${this.statusLabel(newStatus)}`);
-      },
-      error: (err) => this.message.set(err.error?.title || 'Failed to update status'),
-    });
+    this.bookingService
+      .updateBookingStatus(this.id(), newStatus)
+      .subscribe({
+        next: (updated) => {
+          this.booking.set(updated);
+          this.message.set(
+            `Status updated to ${this.statusLabel(newStatus)}`
+          );
+        },
+        error: (err) => {
+          this.message.set(
+            err.error?.title || 'Failed to update status'
+          );
+        },
+      });
   }
 }

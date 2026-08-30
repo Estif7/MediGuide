@@ -11,9 +11,8 @@ public class BookingHub : Hub
     private readonly MediGuideDbContext _context;
     private readonly IAuthorizationService _authorizationService;
 
-    // Tracks which connections are currently viewing which booking.
-    // bookingId -> set of connectionIds currently in that booking's group.
-    private static readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, byte>> ActiveViewers = new();
+    // bookingId -> (userId -> set of connectionIds for that user viewing that booking)
+    private static readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, ConcurrentDictionary<string, byte>>> ActiveViewers = new();
 
     public BookingHub(MediGuideDbContext context, IAuthorizationService authorizationService)
     {
@@ -33,43 +32,59 @@ public class BookingHub : Hub
 
         await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(bookingId));
 
-        var viewers = ActiveViewers.GetOrAdd(bookingId, _ => new ConcurrentDictionary<string, byte>());
-        viewers[Context.ConnectionId] = 0;
+        var userId = Context.UserIdentifier;
+        if (userId is not null)
+        {
+            var bookingViewers = ActiveViewers.GetOrAdd(bookingId, _ => new ConcurrentDictionary<string, ConcurrentDictionary<string, byte>>());
+            var userConnections = bookingViewers.GetOrAdd(userId, _ => new ConcurrentDictionary<string, byte>());
+            userConnections[Context.ConnectionId] = 0;
+        }
     }
 
     public async Task LeaveBooking(Guid bookingId)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(bookingId));
-        RemoveViewer(bookingId, Context.ConnectionId);
+        RemoveViewer(bookingId, Context.UserIdentifier, Context.ConnectionId);
     }
 
     public override Task OnDisconnectedAsync(Exception? exception)
     {
-        // Clean up this connection from every booking it was viewing.
-        foreach (var bookingId in ActiveViewers.Keys)
+        var userId = Context.UserIdentifier;
+        if (userId is not null)
         {
-            RemoveViewer(bookingId, Context.ConnectionId);
+            foreach (var bookingId in ActiveViewers.Keys)
+            {
+                RemoveViewer(bookingId, userId, Context.ConnectionId);
+            }
         }
         return base.OnDisconnectedAsync(exception);
     }
 
-    private static void RemoveViewer(Guid bookingId, string connectionId)
+    private static void RemoveViewer(Guid bookingId, string? userId, string connectionId)
     {
-        if (ActiveViewers.TryGetValue(bookingId, out var viewers))
+        if (userId is null) return;
+
+        if (ActiveViewers.TryGetValue(bookingId, out var bookingViewers)
+            && bookingViewers.TryGetValue(userId, out var connections))
         {
-            viewers.TryRemove(connectionId, out _);
-            if (viewers.IsEmpty)
-                ActiveViewers.TryRemove(bookingId, out _);
+            connections.TryRemove(connectionId, out _);
+            if (connections.IsEmpty)
+            {
+                bookingViewers.TryRemove(userId, out _);
+                if (bookingViewers.IsEmpty)
+                    ActiveViewers.TryRemove(bookingId, out _);
+            }
         }
     }
 
     /// <summary>
-    /// True if any connection is currently viewing this booking.
-    /// Does not distinguish which user — callers combine this with
-    /// "is the sender excluded" logic themselves where needed.
+    /// True if the specific given user currently has at least one connection
+    /// actively viewing this booking (accounts for multiple tabs correctly).
     /// </summary>
-    public static bool HasActiveViewers(Guid bookingId) =>
-        ActiveViewers.TryGetValue(bookingId, out var viewers) && !viewers.IsEmpty;
+    public static bool IsUserViewingBooking(Guid bookingId, string userId) =>
+        ActiveViewers.TryGetValue(bookingId, out var bookingViewers)
+        && bookingViewers.TryGetValue(userId, out var connections)
+        && !connections.IsEmpty;
 
     public static string GroupName(Guid bookingId) => $"booking-{bookingId}";
 }

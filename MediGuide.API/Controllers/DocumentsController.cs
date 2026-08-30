@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MediGuide.API.Services;
+using MediGuide.API.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace MediGuide.API.Controllers;
 
@@ -17,16 +19,20 @@ public class DocumentsController : ControllerBase
     private readonly IWebHostEnvironment _env;
     private readonly IAuthorizationService _authorizationService;
     private readonly INotificationService _notificationService;
+    private readonly IHubContext<BookingHub> _hubContext;
+
     public DocumentsController(
         MediGuideDbContext context,
         IWebHostEnvironment env,
         IAuthorizationService authorizationService,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IHubContext<BookingHub> hubContext)
     {
         _context = context;
         _env = env;
         _authorizationService = authorizationService;
         _notificationService = notificationService;
+        _hubContext = hubContext;
     }
 
     // GET all documents for a booking
@@ -86,7 +92,9 @@ public class DocumentsController : ControllerBase
         }
 
         // Who is uploading?
-        var uploadedBy = User.IsInRole("Agent") ? "Agent" : "Patient";
+        var uploadedBy = User.IsInRole("Agent") ? "Agent"
+                    : User.IsInRole("Admin") ? "Admin"
+                    : "Patient";
 
         var document = new Document
         {
@@ -109,6 +117,9 @@ public class DocumentsController : ControllerBase
             document.FileSizeBytes,
             document.UploadedBy,
             document.CreatedAt);
+
+        await _hubContext.Clients.Group(BookingHub.GroupName(bookingId))
+            .SendAsync("DocumentUploaded", result);
 
         var recipientId = uploadedBy == "Patient"
             ? (booking.AgentId.HasValue ? await _notificationService.GetUserIdForAgentAsync(booking.AgentId.Value) : null)

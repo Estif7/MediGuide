@@ -113,22 +113,18 @@ public class ChatMessagesController : ControllerBase
         await _hubContext.Clients.Group(BookingHub.GroupName(bookingId))
             .SendAsync("ReceiveMessage", result);
 
-        if (!BookingHub.HasActiveViewers(bookingId))
+        var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+        var agentUserId = booking.AgentId.HasValue
+            ? await _notificationService.GetUserIdForAgentAsync(booking.AgentId.Value)
+            : null;
+
+        var recipientId = patientUserId != userId ? patientUserId : agentUserId;
+
+        if (recipientId is not null && !BookingHub.IsUserViewingBooking(bookingId, recipientId))
         {
-            var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
-            var agentUserId = booking.AgentId.HasValue
-                ? await _notificationService.GetUserIdForAgentAsync(booking.AgentId.Value)
-                : null;
-
-            // Notify whichever participant did NOT send this message
-            var recipientId = patientUserId != userId ? patientUserId : agentUserId;
-
-            if (recipientId is not null)
-            {
-                var preview = message.Content.Length > 80 ? message.Content[..80] + "…" : message.Content;
-                await _notificationService.NotifyAsync(
-                    recipientId, "ChatMessage", $"New message on your booking: {preview}", bookingId);
-            }
+            var preview = message.Content.Length > 80 ? message.Content[..80] + "…" : message.Content;
+            await _notificationService.NotifyAsync(
+                recipientId, "ChatMessage", $"New message on your booking: {preview}", bookingId);
         }
 
         return CreatedAtAction(nameof(GetByBooking), new { bookingId }, result);

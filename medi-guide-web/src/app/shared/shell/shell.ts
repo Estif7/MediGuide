@@ -93,7 +93,17 @@ export class Shell implements OnInit, OnDestroy {
 
     if (notification.bookingId) {
       const path = this.isAdmin() ? '/admin/bookings' : this.isAgent() ? '/agent/bookings' : '/patient/bookings';
-      this.router.navigate([path, notification.bookingId]);
+      const url = `${path}/${notification.bookingId}`;
+
+      if (this.router.url === url) {
+        // Already on this booking — force the component to reload its data
+        // instead of silently no-op'ing on an identical URL.
+        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+          this.router.navigate([path, notification.bookingId]);
+        });
+      } else {
+        this.router.navigate([path, notification.bookingId]);
+      }
     }
   }
 

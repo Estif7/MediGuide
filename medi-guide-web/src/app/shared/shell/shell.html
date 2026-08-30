@@ -41,7 +41,9 @@
     </mat-menu>
 
     <span class="user-name">{{ user()?.fullName }}</span>
-    <button mat-stroked-button color="primary" type="button" (click)="logout()">Logout</button>
+    <!-- <button mat-stroked-button color="primary" type="button" (click)="logout()">Logout</button> -->
+    <button mat-stroked-button class="logout-button" type="button" (click)="logout()">Logout</button>
+
   </div>
 </header>
 
