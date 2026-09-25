@@ -7,6 +7,9 @@ public record AgentDto(
     string FullName,
     string Email,
     string PhoneNumber,
+    string? Title,
+    string? Department,
+    string? Specialty,
     bool IsAvailable,
     bool IsActive
 );
@@ -14,5 +17,8 @@ public record AgentDto(
 public record AgentQueryParams(
     int Page = 1,
     int PageSize = 20,
-    string? Name = null
+    string? Name = null,
+    string? Department = null,
+    string? Specialty = null,
+    Guid? ExcludeAgentId = null
 );

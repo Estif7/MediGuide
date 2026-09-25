@@ -1,0 +1,122 @@
+.feedback-overlay-container {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  width: min(520px, calc(100vw - 32px));
+  pointer-events: none;
+  animation: toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.feedback-card {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--app-surface, #ffffff);
+  color: var(--app-text, #1f2937);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--app-card-border, rgba(0, 0, 0, 0.1));
+  backdrop-filter: blur(12px);
+
+  &.success {
+    border-left: 5px solid #10b981;
+    .feedback-icon-box {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+    }
+  }
+
+  &.error {
+    border-left: 5px solid #ef4444;
+    .feedback-icon-box {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.12);
+    }
+  }
+
+  &.warning {
+    border-left: 5px solid #f59e0b;
+    .feedback-icon-box {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+    }
+  }
+
+  &.info {
+    border-left: 5px solid #3b82f6;
+    .feedback-icon-box {
+      color: #3b82f6;
+      background: rgba(59, 130, 246, 0.12);
+    }
+  }
+}
+
+.feedback-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.feedback-content {
+  flex: 1;
+  min-width: 0;
+
+  .feedback-title {
+    margin: 0 0 4px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--app-text, #1f2937);
+  }
+
+  .feedback-message {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--app-text-muted, #64748b);
+    word-break: break-word;
+  }
+}
+
+.feedback-close-btn {
+  flex-shrink: 0;
+  margin: -6px -6px 0 0;
+  color: var(--app-text-muted, #64748b);
+  opacity: 0.8;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@keyframes toastSlideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}

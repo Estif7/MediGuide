@@ -14,15 +14,21 @@ import { BookingService } from '../../../core/services/booking';
 import { PatientService, PatientDto } from '../../../core/services/patient';
 import { AgentService } from '../../../core/services/agent';
 import { ReferenceDataService } from '../../../core/services/reference-data';
+import { TestimonialService } from '../../../core/services/testimonial';
+import { TranslationService } from '../../../core/services/translation';
+import { FeedbackService } from '../../../core/services/feedback.service';
+import { AdminTestimonial } from '../../../core/models/testimonial.model';
 import { StatePanel } from '../../../shared/state-panel/state-panel';
 import { Booking, BookingStatus } from '../../../core/models/booking.model';
 import { bookingStatusLabel } from '../../../core/utils/status-label';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [
     FormsModule,
+    MatIconModule,
     RouterLink,
     MatToolbarModule,
     MatCardModule,
@@ -42,6 +48,9 @@ export class Dashboard implements OnInit {
   private readonly bookingService = inject(BookingService);
   private readonly patientService = inject(PatientService);
   private readonly agentService = inject(AgentService);
+  private readonly testimonialService = inject(TestimonialService);
+  private readonly feedback = inject(FeedbackService);
+  readonly i18n = inject(TranslationService);
 
   // Public because the template needs access to refreshAgents().
   readonly referenceData = inject(ReferenceDataService);
@@ -66,6 +75,14 @@ export class Dashboard implements OnInit {
   agentsTotalCount = computed(() => this.agents().length);
   agentsLoading = this.referenceData.agentsLoading;
   agentsError = this.referenceData.agentsError;
+
+  // Show at most 5 at a time on dashboard overview
+  displayedAgents = computed(() => this.agents().slice(0, 5));
+  displayedPatients = computed(() => this.patients().slice(0, 5));
+
+  // Testimonials moderation queue
+  testimonials = signal<AdminTestimonial[]>([]);
+  testimonialsLoading = signal(false);
 
   message = signal<string | null>(null);
   loading = signal(false);
@@ -98,6 +115,7 @@ export class Dashboard implements OnInit {
     this.loadBookings();
     this.referenceData.loadAgents();
     this.loadPatients();
+    this.loadTestimonials();
   }
 
   loadBookings() {
@@ -164,7 +182,9 @@ export class Dashboard implements OnInit {
 
   registerAgent() {
     if (!this.agentName() || !this.agentEmail() || !this.agentPassword()) {
-      this.message.set('Name, email and password are required');
+      const msg = 'Name, email and password are required';
+      this.feedback.error(msg);
+      this.message.set(msg);
       return;
     }
 
@@ -181,7 +201,9 @@ export class Dashboard implements OnInit {
       .subscribe({
         next: () => {
           this.loading.set(false);
-          this.message.set('Agent registered successfully');
+          const successMsg = 'Healthcare Professional registered successfully';
+          this.feedback.success(successMsg);
+          this.message.set(successMsg);
 
           this.agentName.set('');
           this.agentEmail.set('');
@@ -193,11 +215,56 @@ export class Dashboard implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.message.set(
-            err.error?.[0] || err.error || 'Failed to register agent',
-          );
+          const errMsg = err.error?.[0] || err.error || 'Failed to register healthcare professional';
+          this.feedback.error(errMsg);
+          this.message.set(errMsg);
         },
       });
+  }
+
+  loadTestimonials() {
+    this.testimonialsLoading.set(true);
+    this.testimonialService.getForAdmin().subscribe({
+      next: (data) => {
+        this.testimonials.set(data);
+        this.testimonialsLoading.set(false);
+      },
+      error: () => this.testimonialsLoading.set(false),
+    });
+  }
+
+  approveTestimonial(id: string) {
+    this.testimonialService.approve(id).subscribe({
+      next: () => {
+        this.testimonials.update((list) =>
+          list.map((t) => (t.id === id ? { ...t, isApproved: true } : t))
+        );
+        const msg = 'Testimonial approved and published to homepage.';
+        this.feedback.success(msg);
+        this.message.set(msg);
+      },
+      error: () => {
+        const err = 'Failed to approve testimonial';
+        this.feedback.error(err);
+        this.message.set(err);
+      },
+    });
+  }
+
+  deleteTestimonial(id: string) {
+    this.testimonialService.delete(id).subscribe({
+      next: () => {
+        this.testimonials.update((list) => list.filter((t) => t.id !== id));
+        const msg = 'Testimonial removed.';
+        this.feedback.info(msg);
+        this.message.set(msg);
+      },
+      error: () => {
+        const err = 'Failed to delete testimonial';
+        this.feedback.error(err);
+        this.message.set(err);
+      },
+    });
   }
 
   logout() {

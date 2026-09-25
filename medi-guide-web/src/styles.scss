@@ -1,35 +1,153 @@
 @use '@angular/material' as mat;
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-body-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-surface-variant: #f1f5f9;
+  --app-card-bg: #ffffff;
+  --app-card-border: #e2e8f0;
+  --app-text: #0f172a;
+  --app-text-muted: #64748b;
+  --app-header-bg: rgba(255, 255, 255, 0.96);
+  --app-border: #e2e8f0;
+  --app-primary: #087f8c;
+  --app-primary-rgb: 8, 127, 140;
+  --app-primary-dark: #065a64;
+  --app-accent: #0284c7;
+  --app-accent-rgb: 2, 132, 199;
+  --logo-filter: none;
 }
 
-html {
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
-  background: #eef3ff;
-}
-
-body {
-  margin: 0;
-  background: linear-gradient(180deg, #edf3ff 0%, #f7f9fc 100%);
-  color: #1f2937;
+html.dark-theme,
+body.dark-theme {
+  color-scheme: dark;
+  --app-bg: #0b1320;
+  --app-body-bg: #0b1320;
+  --app-surface: #111c2e;
+  --app-surface-variant: #16243b;
+  --app-card-bg: #152238;
+  --app-card-border: rgba(255, 255, 255, 0.09);
+  --app-text: #f8fafc;
+  --app-text-muted: #94a3b8;
+  --app-header-bg: rgba(17, 28, 46, 0.96);
+  --app-border: #1e2f4a;
+  --app-primary: #22d3ee;
+  --app-primary-rgb: 34, 211, 238;
+  --app-primary-dark: #0891b2;
+  --app-accent: #38bdf8;
+  --app-accent-rgb: 56, 189, 248;
+  --logo-filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.35));
 }
 
 @include mat.core();
 
 html {
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--app-bg);
   @include mat.theme(
     (
       color: (
         primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
         theme-type: light,
-        white: white,
       ),
       typography: Roboto,
       density: 0,
     )
   );
+}
+
+html.dark-theme {
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+        theme-type: dark,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+body {
+  margin: 0;
+  background: var(--app-body-bg);
+  color: var(--app-text);
+  min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.brand-logo-img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+  filter: var(--logo-filter);
+  transition: transform 0.2s ease;
+  display: block;
+
+  &:hover {
+    transform: scale(1.03);
+  }
+}
+
+/* Universal brand emblem constraints across all pages (prevents oversized logos) */
+.brand-emblem-box {
+  width: 38px !important;
+  height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+  border-radius: 11px;
+  background: #ffffff;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(8, 127, 140, 0.25);
+  flex-shrink: 0;
+
+  .brand-emblem-img {
+    width: 26px !important;
+    height: 26px !important;
+    max-width: 26px !important;
+    max-height: 26px !important;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.brand-emblem-badge {
+  width: 36px !important;
+  height: 36px !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
+  border-radius: 10px;
+  background: #ffffff;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(8, 127, 140, 0.2);
+  flex-shrink: 0;
+
+  .emblem-img {
+    width: 24px !important;
+    height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+    object-fit: contain;
+    display: block;
+  }
 }
 
 .page {
@@ -55,8 +173,228 @@ html {
   font-weight: 500;
 }
 
+body.dark-theme .message {
+  background: rgba(46, 125, 50, 0.2);
+  color: #81c784;
+  border-color: rgba(129, 199, 132, 0.3);
+}
+
+body.dark-theme {
+  .admin-page,
+  .patient-page,
+  .agent-page,
+  .booking-page,
+  .booking-detail-page,
+  .dashboard-container {
+    color: var(--app-text) !important;
+  }
+
+  .stat-card,
+  .summary-card,
+  .booking-card,
+  .bookings-card,
+  .support-card,
+  .management-card,
+  .testimonials-section,
+  .health-notice,
+  .filter-panel,
+  .moderation-card,
+  .case-card,
+  .detail-section,
+  .overview-card,
+  .chat-card,
+  .sidebar-card,
+  .control-card,
+  .admin-card,
+  .booking-header,
+  .agent-header,
+  .chat-input-bar {
+    background: var(--app-card-bg) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+
+    h1, h2, h3, h4, strong {
+      color: var(--app-text) !important;
+    }
+
+    p, span, .info-label, .stat-label, .stat-description, .booking-details, .bubble-meta {
+      color: var(--app-text-muted);
+    }
+  }
+
+  .stat-icon,
+  .section-icon,
+  .person-avatar,
+  .booking-icon,
+  .count-badge {
+    background: rgba(var(--app-primary-rgb), 0.15) !important;
+    color: var(--app-primary) !important;
+  }
+
+  .section-header,
+  .card-header,
+  .sidebar-heading,
+  .chat-header,
+  .booking-row {
+    border-color: var(--app-border) !important;
+  }
+
+  .booking-row {
+    color: var(--app-text) !important;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.04) !important;
+    }
+  }
+
+  .chat-messages,
+  .notes-box,
+  .assignment-current,
+  .upload-box,
+  .document-item,
+  .security-notice,
+  .agent-notice {
+    background: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+
+    strong {
+      color: var(--app-text) !important;
+    }
+
+    p, span {
+      color: var(--app-text-muted) !important;
+    }
+  }
+
+  .incoming-bubble {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #f1f5f9 !important;
+  }
+
+  .back-button {
+    background: var(--app-card-bg) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+  }
+
+  .status-badge {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+  }
+
+  .admin-header h1,
+  .dashboard-header h1,
+  .page-title {
+    color: var(--app-text) !important;
+  }
+
+  .mat-mdc-menu-panel {
+    background: #18243b !important;
+    border: 1px solid #263550;
+    color: #f1f5f9 !important;
+  }
+
+  .mat-mdc-menu-item {
+    color: #f1f5f9 !important;
+    &:hover {
+      background: rgba(56, 189, 248, 0.1) !important;
+    }
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    background-color: #131d31 !important;
+    color: #f1f5f9 !important;
+  }
+
+  .mediz-footer {
+    --footer-bg: #0b1320 !important;
+    --footer-border: rgba(255, 255, 255, 0.09) !important;
+    --footer-heading: #f8fafc !important;
+    --footer-text: #94a3b8 !important;
+    --footer-card-bg: #152238 !important;
+    --footer-bottom-bg: #070d18 !important;
+    --footer-accent: #38bdf8 !important;
+    --footer-accent-hover: #7dd3fc !important;
+    --footer-time: #7dd3fc !important;
+    --footer-day: #38bdf8 !important;
+    --footer-copyright: #64748b !important;
+    --footer-arrow: #64748b !important;
+    background: #0b1320 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.09) !important;
+    color: #94a3b8 !important;
+
+    .footer-col .footer-heading {
+      color: #f8fafc !important;
+    }
+    .brand-col .footer-brand-lockup .brand-name-group .brand-title {
+      color: #f8fafc !important;
+    }
+    .brand-col .footer-brand-lockup .brand-name-group .brand-subtitle {
+      color: #94a3b8 !important;
+    }
+    .brand-col .footer-address {
+      color: #94a3b8 !important;
+    }
+    .footer-col .footer-menu-list li a {
+      color: #94a3b8 !important;
+      .arrow {
+        color: #64748b !important;
+      }
+      &:hover {
+        color: #38bdf8 !important;
+        .arrow {
+          color: #38bdf8 !important;
+        }
+      }
+    }
+    .hours-col .hours-schedule .hour-row {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+      .day-slot {
+        color: #38bdf8 !important;
+        .hour-clock-icon {
+          stroke: #38bdf8 !important;
+        }
+      }
+      .time-slot {
+        color: #7dd3fc !important;
+      }
+    }
+    .hours-col .emergency-badge-box {
+      background: #152238 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      span {
+        color: #38bdf8 !important;
+      }
+    }
+    .footer-bottom-bar {
+      background: #070d18 !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+      .footer-social-icons .footer-social-btn {
+        color: #38bdf8 !important;
+        &:hover {
+          color: #7dd3fc !important;
+        }
+      }
+      .footer-copyright {
+        color: #64748b !important;
+      }
+    }
+  }
+
+  .care-center-map-section .map-floating-card {
+    background: #111c2e !important;
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
 mat-card {
   border-radius: 16px !important;
+  background-color: var(--app-card-bg) !important;
+  color: var(--app-text) !important;
+  border: 1px solid var(--app-card-border);
 }
 
 mat-form-field {
@@ -80,11 +418,12 @@ mat-form-field {
   margin: 0;
   font-size: clamp(2rem, 3vw, 2.5rem);
   letter-spacing: -0.04em;
+  color: var(--app-text);
 }
 
 .hero-title-row p {
   margin: 0.35rem 0 0;
-  color: rgba(0, 0, 0, 0.7);
+  color: var(--app-text-muted);
   font-size: 1.05rem;
 }
 
@@ -152,14 +491,14 @@ mat-form-field {
 
 .list-item-link:hover,
 .list-item-link:focus-visible {
-  background: rgba(25, 118, 210, 0.06);
+  background: rgba(2, 132, 199, 0.08);
   text-decoration: none;
-  box-shadow: inset 0 0 0 1px rgba(25, 118, 210, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(2, 132, 199, 0.12);
 }
 
 .empty-state {
   margin: 0;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--app-text-muted);
 }
 
 .clickable,
@@ -167,34 +506,6 @@ button,
 a[href],
 [routerLink] {
   cursor: pointer;
-}
-
-.login-page {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
-}
-
-.login-card {
-  width: min(100%, 430px);
-}
-
-.login-card mat-card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.login-card form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.login-card .actions {
-  display: flex;
-  justify-content: flex-end;
 }
 
 @media (max-width: 640px) {
@@ -210,4 +521,92 @@ a[href],
   .summary-grid.single {
     max-width: none;
   }
+}
+
+/* ==========================================================
+   GLOBAL OVERLAYS, MAT-MENUS, SELECT PANELS & DIALOGS
+========================================================== */
+.cdk-overlay-pane {
+  max-width: calc(100vw - 24px) !important;
+}
+
+.mat-mdc-menu-panel {
+  border-radius: 14px !important;
+  background: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border: 1px solid var(--app-card-border) !important;
+  box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.16), 0 6px 14px -2px rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  overflow: hidden !important;
+}
+
+.mat-mdc-menu-panel.notif-menu-dropdown {
+  min-width: 380px !important;
+  max-width: 420px !important;
+  width: 380px !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 440px) {
+  .mat-mdc-menu-panel.notif-menu-dropdown {
+    min-width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    width: calc(100vw - 24px) !important;
+  }
+}
+
+.mat-mdc-menu-item {
+  color: var(--app-text) !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  min-height: 44px !important;
+  transition: background 0.15s ease !important;
+
+  &:hover {
+    background: rgba(var(--app-primary-rgb), 0.08) !important;
+  }
+
+  mat-icon {
+    color: var(--app-primary) !important;
+    margin-right: 10px !important;
+  }
+}
+
+.mat-mdc-select-panel {
+  border-radius: 14px !important;
+  background: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border: 1px solid var(--app-card-border) !important;
+  box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.16) !important;
+}
+
+.mat-mdc-option {
+  color: var(--app-text) !important;
+  font-size: 13.5px !important;
+  min-height: 44px !important;
+
+  &:hover:not(.mdc-list-item--disabled) {
+    background: rgba(var(--app-primary-rgb), 0.08) !important;
+  }
+
+  &.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+    background: rgba(var(--app-primary-rgb), 0.14) !important;
+    color: var(--app-primary) !important;
+  }
+}
+
+/* Modern smooth scrollbar across all containers */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(var(--app-primary-rgb), 0.2);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--app-primary-rgb), 0.4);
 }

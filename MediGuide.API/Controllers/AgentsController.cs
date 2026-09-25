@@ -29,16 +29,24 @@ public class AgentsController : ControllerBase
 
         var agentsQuery = _context.Agents.AsNoTracking().Where(a => a.IsActive);
 
-        if (!User.IsInRole("Admin"))
-        {
-            if (!Guid.TryParse(User.FindFirst("agentId")?.Value, out var callerAgentId))
-                return Forbid();
-
-            agentsQuery = agentsQuery.Where(a => a.Id == callerAgentId);
-        }
-        else if (!string.IsNullOrWhiteSpace(query.Name))
+        if (!string.IsNullOrWhiteSpace(query.Name))
         {
             agentsQuery = agentsQuery.Where(a => EF.Functions.ILike(a.FullName, $"%{query.Name}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Department))
+        {
+            agentsQuery = agentsQuery.Where(a => a.Department != null && EF.Functions.ILike(a.Department, $"%{query.Department}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Specialty))
+        {
+            agentsQuery = agentsQuery.Where(a => a.Specialty != null && EF.Functions.ILike(a.Specialty, $"%{query.Specialty}%"));
+        }
+
+        if (query.ExcludeAgentId.HasValue)
+        {
+            agentsQuery = agentsQuery.Where(a => a.Id != query.ExcludeAgentId.Value);
         }
 
         var totalCount = await agentsQuery.CountAsync();
@@ -52,6 +60,9 @@ public class AgentsController : ControllerBase
                 a.FullName,
                 a.Email,
                 a.PhoneNumber,
+                a.Title,
+                a.Department,
+                a.Specialty,
                 a.IsAvailable,
                 a.IsActive))
             .ToListAsync();
@@ -63,12 +74,6 @@ public class AgentsController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<AgentDto>> GetById(Guid id)
     {
-        if (!User.IsInRole("Admin")
-            && (!Guid.TryParse(User.FindFirst("agentId")?.Value, out var agentId) || agentId != id))
-        {
-            return Forbid();
-        }
-
         var agent = await _context.Agents
             .AsNoTracking()
             .Where(a => a.Id == id)
@@ -77,6 +82,9 @@ public class AgentsController : ControllerBase
                 a.FullName,
                 a.Email,
                 a.PhoneNumber,
+                a.Title,
+                a.Department,
+                a.Specialty,
                 a.IsAvailable,
                 a.IsActive))
             .FirstOrDefaultAsync();

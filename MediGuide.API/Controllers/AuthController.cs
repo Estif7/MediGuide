@@ -51,7 +51,14 @@ public class AuthController : ControllerBase
             FullName = dto.FullName,
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
-            PreferredLanguage = dto.PreferredLanguage ?? "en"
+            PreferredLanguage = dto.PreferredLanguage ?? "en",
+            DateOfBirth = dto.DateOfBirth,
+            Gender = dto.Gender,
+            EmergencyContactName = dto.EmergencyContactName,
+            EmergencyContactPhone = dto.EmergencyContactPhone,
+            Allergies = dto.Allergies,
+            ChronicConditions = dto.ChronicConditions,
+            CurrentMedications = dto.CurrentMedications
         };
         _context.Patients.Add(patient);
         await _context.SaveChangesAsync();
@@ -241,6 +248,9 @@ public class AuthController : ControllerBase
             agent.FullName,
             agent.Email,
             agent.PhoneNumber,
+            agent.Title,
+            agent.Department,
+            agent.Specialty,
             agent.IsAvailable,
             agent.IsActive);
 

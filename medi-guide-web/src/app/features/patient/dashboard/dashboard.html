@@ -1,32 +1,109 @@
-<div class="page">
-  <mat-card appearance="outlined" class="hero-card">
-    <mat-card-content>
-      <div class="hero-title-row">
-        <div>
-          <p>Welcome, {{ user()?.fullName }}</p>
-        </div>
-      </div>
-    </mat-card-content>
-  </mat-card>
+<div class="patient-page">
+
+  <!-- ================================
+       WELCOME SECTION
+  ================================= -->
+  <section class="welcome-section">
+    <div>
+      <span class="section-eyebrow">{{ i18n.isAmharic() ? 'የታካሚ ፖርታል' : 'PATIENT PORTAL' }}</span>
+      <h2>{{ i18n.t('patient.welcome') }}, {{ user()?.fullName }}</h2>
+      <p>
+        {{ i18n.isAmharic() ? 'የህክምና ምክክር ጥያቄዎችዎን እና ቀጠሮዎችዎን እዚህ ያስተዳድሩ።' : 'Manage your healthcare requests and consultations.' }}
+      </p>
+    </div>
+
+    <div class="availability-badge">
+      <span class="status-dot"></span>
+      {{ i18n.isAmharic() ? 'ንቁ መለያ' : 'Active Account' }}
+    </div>
+  </section>
+
+
+  <!-- ================================
+       SUCCESS / MESSAGE
+  ================================= -->
 
   @if (message()) {
-    <div class="message">{{ message() }}</div>
+    <div class="success-message">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ message() }}</span>
+    </div>
   }
 
-  <div class="summary-grid single">
-    <mat-card appearance="outlined">
-      <mat-card-title>My bookings</mat-card-title>
-      <mat-card-content>
-        <strong>{{ bookings().length }}</strong>
-      </mat-card-content>
-    </mat-card>
-  </div>
 
-  <mat-card appearance="outlined" class="form-card">
-    <mat-card-header>
-      <mat-card-title>Request Support</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
+  <!-- ================================
+       QUICK STATS
+  ================================= -->
+
+  <section class="stats-grid">
+
+    <div class="stat-card">
+
+      <div class="stat-icon">
+        <mat-icon>event_note</mat-icon>
+      </div>
+
+      <div class="stat-content">
+        <span class="stat-label">My bookings</span>
+        <strong>{{ bookings().length }}</strong>
+      </div>
+
+      <mat-icon class="stat-arrow">
+        arrow_forward
+      </mat-icon>
+
+    </div>
+
+
+    <div class="stat-card">
+
+      <div class="stat-icon">
+        <mat-icon>medical_services</mat-icon>
+      </div>
+
+      <div class="stat-content">
+        <span class="stat-label">Healthcare support</span>
+        <strong>Available</strong>
+      </div>
+
+      <mat-icon class="stat-arrow">
+        arrow_forward
+      </mat-icon>
+
+    </div>
+
+  </section>
+
+
+  <!-- ================================
+       MAIN CONTENT
+  ================================= -->
+
+  <div class="content-grid">
+
+
+    <!-- ==============================
+         REQUEST SUPPORT
+    =============================== -->
+
+    <section class="support-card">
+
+      <div class="section-heading">
+
+        <div class="section-icon">
+          <mat-icon>add_circle_outline</mat-icon>
+        </div>
+
+        <div>
+          <h2>Request Support</h2>
+          <p>
+            Tell us what kind of healthcare support you need.
+          </p>
+        </div>
+
+      </div>
+
+
       <app-state-panel
         [loading]="categoriesLoading()"
         [error]="categoriesError()"
@@ -35,56 +112,273 @@
         emptyIcon="medical_services"
         [retry]="referenceData.refreshCategories.bind(referenceData)"
       >
-        <div class="form-panel">
-          <mat-form-field appearance="outline">
-            <mat-label>Service</mat-label>
-            <mat-select [ngModel]="selectedCategoryId()" (ngModelChange)="selectedCategoryId.set($event)">
-              <mat-option value="">-- Select --</mat-option>
+
+        <div class="support-form">
+
+          <!-- SERVICE -->
+
+          <mat-form-field
+            appearance="outline"
+            class="full-width"
+          >
+
+            <mat-label>Healthcare service</mat-label>
+
+            <mat-icon matPrefix>
+              medical_services
+            </mat-icon>
+
+            <mat-select
+              [ngModel]="selectedCategoryId()"
+              (ngModelChange)="selectedCategoryId.set($event)"
+            >
+
+              <mat-option value="">
+                {{ i18n.isAmharic() ? 'አገልግሎት ይምረጡ' : 'Select a service' }}
+              </mat-option>
+
               @for (c of categories(); track c.id) {
-                <mat-option [value]="c.id">{{ c.name }} ({{ c.basePrice }} ETB)</mat-option>
+
+                <mat-option [value]="c.id">
+
+                  <span class="service-option">
+                    <span>{{ c.name }}</span>
+                    <span class="price">
+                      {{ c.basePrice }} ETB
+                    </span>
+                  </span>
+
+                </mat-option>
+
               }
+
             </mat-select>
+
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Notes</mat-label>
-            <textarea matInput [ngModel]="notes()" (ngModelChange)="notes.set($event)" rows="3"></textarea>
-          </mat-form-field>
 
-          <div class="actions">
-            <button mat-flat-button color="primary" type="button" (click)="createBooking()" [disabled]="loading()">
-              {{ loading() ? 'Submitting…' : 'Submit Request' }}
-            </button>
+          <!-- RESPONSE TIME TIER SELECTOR -->
+          <div class="turnaround-selection" style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 13px; font-weight: 600; color: var(--app-text); margin-bottom: 8px;">
+              {{ i18n.isAmharic() ? 'የምላሽ ጊዜ ፍጥነት ይምረጡ' : 'Select Response Turnaround' }}
+            </label>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+              <div 
+                (click)="selectedResponseTime.set(2)"
+                [style.border]="selectedResponseTime() === 2 ? '2px solid #0284c7' : '1px solid var(--app-border)'"
+                [style.background]="selectedResponseTime() === 2 ? 'rgba(2, 132, 199, 0.12)' : 'var(--app-card-bg)'"
+                style="padding: 12px 10px; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s;">
+                <strong style="display: block; font-size: 13px; color: var(--app-text);">{{ i18n.isAmharic() ? 'መደበኛ' : 'Standard' }}</strong>
+                <span style="font-size: 11px; color: var(--app-primary); font-weight: 600;">{{ i18n.t('tiers.standard.time') }}</span>
+                <div style="font-size: 11px; color: var(--app-text-muted); margin-top: 4px;">{{ i18n.isAmharic() ? 'መደበኛ ተመን' : 'Base Rate' }}</div>
+              </div>
+
+              <div 
+                (click)="selectedResponseTime.set(1)"
+                [style.border]="selectedResponseTime() === 1 ? '2px solid #0284c7' : '1px solid var(--app-border)'"
+                [style.background]="selectedResponseTime() === 1 ? 'rgba(2, 132, 199, 0.12)' : 'var(--app-card-bg)'"
+                style="padding: 12px 10px; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s;">
+                <strong style="display: block; font-size: 13px; color: var(--app-text);">{{ i18n.isAmharic() ? 'አስቸኳይ' : 'Expedited' }}</strong>
+                <span style="font-size: 11px; color: var(--app-primary); font-weight: 600;">{{ i18n.t('tiers.expedited.time') }}</span>
+                <div style="font-size: 11px; color: #10b981; margin-top: 4px; font-weight: 600;">+30%</div>
+              </div>
+
+              <div 
+                (click)="selectedResponseTime.set(0)"
+                [style.border]="selectedResponseTime() === 0 ? '2px solid #0284c7' : '1px solid var(--app-border)'"
+                [style.background]="selectedResponseTime() === 0 ? 'rgba(2, 132, 199, 0.12)' : 'var(--app-card-bg)'"
+                style="padding: 12px 10px; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s;">
+                <strong style="display: block; font-size: 13px; color: var(--app-text);">{{ i18n.isAmharic() ? 'ቅድሚያ ⚡' : 'Priority ⚡' }}</strong>
+                <span style="font-size: 11px; color: var(--app-primary); font-weight: 600;">{{ i18n.t('tiers.priority.time') }}</span>
+                <div style="font-size: 11px; color: #f59e0b; margin-top: 4px; font-weight: 600;">+75%</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </app-state-panel>
-    </mat-card-content>
-  </mat-card>
 
-  <mat-card appearance="outlined" class="list-card">
-    <mat-card-header>
-      <mat-card-title>My Bookings</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
+          <!-- PRICE ESTIMATION CALLOUT -->
+          @if (selectedCategory()) {
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--app-card-bg); border: 1px dashed var(--app-primary); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
+              <div>
+                <span style="font-size: 12px; color: var(--app-text-muted); display: block;">{{ i18n.isAmharic() ? 'የተገመተው አጠቃላይ ክፍያ' : 'Estimated Consultation Fee' }}</span>
+                <strong style="font-size: 18px; color: var(--app-primary);">{{ estimatedPrice() }} ETB</strong>
+              </div>
+              <span style="font-size: 12px; font-weight: 600; color: var(--app-primary); background: rgba(var(--app-primary-rgb), 0.12); padding: 4px 10px; border-radius: 20px;">
+                {{ timeLabel(selectedResponseTime()) }}
+              </span>
+            </div>
+          }
+
+          <!-- NOTES -->
+
+          <mat-form-field
+            appearance="outline"
+            class="full-width"
+          >
+
+            <mat-label>
+              {{ i18n.isAmharic() ? 'የህመምዎ ሁኔታ ወይም ፍላጎት' : 'How can we help?' }}
+            </mat-label>
+
+            <mat-icon matPrefix>
+              notes
+            </mat-icon>
+
+            <textarea
+              matInput
+              [ngModel]="notes()"
+              (ngModelChange)="notes.set($event)"
+              rows="4"
+              [placeholder]="i18n.isAmharic() ? 'ስለ ጤና ሁኔታዎ ወይም የሚፈልጉትን ድጋፍ በዝርዝር ይግለጹ...' : 'Briefly describe what you need help with...'"
+            ></textarea>
+
+          </mat-form-field>
+
+
+          <!-- ACTION -->
+
+          <div class="form-action">
+
+            <button
+              mat-flat-button
+              class="request-button"
+              type="button"
+              (click)="createBooking()"
+              [disabled]="loading()"
+            >
+
+              @if (loading()) {
+
+                <mat-progress-spinner
+                  diameter="19"
+                  mode="indeterminate">
+                </mat-progress-spinner>
+
+                <span>{{ i18n.isAmharic() ? 'በመላክ ላይ...' : 'Submitting...' }}</span>
+
+              }
+
+              @else {
+                <ng-container>
+                  <mat-icon>send</mat-icon>
+                  <span>{{ i18n.isAmharic() ? 'ጥያቄውን ላክ' : 'Submit Request' }}</span>
+                </ng-container>
+              }
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </app-state-panel>
+
+    </section>
+
+
+    <!-- ==============================
+         BOOKINGS
+    =============================== -->
+
+    <section class="bookings-card">
+
+      <div class="section-heading">
+
+        <div class="section-icon">
+          <mat-icon>event_note</mat-icon>
+        </div>
+
+        <div>
+          <h2>{{ i18n.t('patient.myBookings') }}</h2>
+          <p>
+            {{ i18n.isAmharic() ? 'የምክክር ጥያቄዎችዎን ሁኔታ ይከታተሉ።' : 'Track your healthcare requests.' }}
+          </p>
+        </div>
+
+      </div>
+
+
       <app-state-panel
         [loading]="bookingsLoading()"
         [error]="bookingsError()"
         [empty]="bookings().length === 0"
-        emptyMessage="No bookings yet."
+        [emptyMessage]="i18n.t('patient.emptyBookings')"
         emptyIcon="event_busy"
         [retry]="loadBookings.bind(this)"
       >
-        <mat-list>
+
+        <mat-list class="booking-list">
+
           @for (b of bookings(); track b.id) {
-            <a class="list-item-link" [routerLink]="['/patient/bookings', b.id]">
-              <mat-list-item>
-                <span matListItemTitle>{{ b.categoryName }}</span>
-                <span matListItemLine>{{ statusLabel(b.status) }} · {{ b.amount }} ETB</span>
-              </mat-list-item>
+
+            <a
+              class="booking-item"
+              [routerLink]="['/patient/bookings', b.id]"
+            >
+
+              <div class="booking-icon">
+                <mat-icon>medical_services</mat-icon>
+              </div>
+
+              <div class="booking-info">
+
+                <span class="booking-name">
+                  {{ b.categoryName }}
+                </span>
+
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px;">
+                  <span class="booking-details">
+                    {{ statusLabel(b.status) }}
+                  </span>
+
+                  @if (b.status === 0) {
+                    <span style="background: rgba(2, 132, 199, 0.12); color: #0284c7; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; border: 1px solid rgba(2, 132, 199, 0.3);">
+                      {{ i18n.isAmharic() ? 'ክፍያ ይጠበቃል (ዲሞ)' : 'Pay Now (Demo)' }}
+                    </span>
+                  }
+                </div>
+
+              </div>
+
+              <div class="booking-right">
+
+                <span class="booking-price">
+                  {{ b.amount }} ETB
+                </span>
+
+                <mat-icon>
+                  chevron_right
+                </mat-icon>
+
+              </div>
+
             </a>
+
           }
+
         </mat-list>
+
       </app-state-panel>
-    </mat-card-content>
-  </mat-card>
+
+    </section>
+
+  </div>
+
+
+  <!-- ================================
+       FOOTER NOTICE
+  ================================= -->
+
+  <div class="health-notice">
+
+    <mat-icon>verified_user</mat-icon>
+
+    <div>
+      <strong>Your health matters.</strong>
+      <span>
+        Your information is handled securely and confidentially.
+      </span>
+    </div>
+
+  </div>
+
 </div>

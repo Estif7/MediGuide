@@ -1,0 +1,966 @@
+<div class="landing-page">
+  <!-- UNIFIED HERO SECTION WITH INTEGRATED TRANSPARENT TOP BAR & NAVBAR (EXACT REPLICA OF REFERENCE) -->
+  <section id="top" class="hero-replica-wrapper">
+    <!-- Dynamic Background Image Slides (Cycling through clinical photos with Medicare as primary) -->
+    <div class="hero-bg-container">
+      @for (slide of heroSlides; track slide.image; let idx = $index) {
+        <div
+          class="hero-bg-slide"
+          [style.backgroundImage]="'url(' + slide.image + ')'"
+          [class.active]="currentHeroIndex() === idx"
+        ></div>
+      }
+    </div>
+    <div class="hero-replica-overlay"></div>
+
+    <div class="hero-inner-container">
+      <!-- ROW 1: TOP CONTACT & WORKING HOURS (TRANSPARENT FLOATING ON HERO) -->
+      <div class="replica-top-bar">
+        <!-- Logo / Brand lockup -->
+        <a routerLink="/" class="replica-brand">
+          <div class="replica-brand-badge">
+            <img src="/assets/emblem.png" alt="Medi-Guide Emblem" class="replica-logo-icon" />
+          </div>
+          <div class="replica-brand-text">
+            <span class="replica-brand-title">MEDI-GUIDE</span>
+            <span class="replica-brand-sub">ETHIOPIA</span>
+          </div>
+        </a>
+
+        <!-- Mobile Quick Contact & Tools (Visible on mobile only) -->
+        <div class="replica-mobile-tools">
+          <a href="tel:+251116678900" class="mobile-tool-btn" title="Call Helpline" aria-label="Direct Helpline">
+            <mat-icon>phone_in_talk</mat-icon>
+          </a>
+          <button
+            type="button"
+            class="mobile-tool-btn"
+            (click)="themeService.toggleTheme()"
+            aria-label="Toggle theme"
+          >
+            <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+          </button>
+          <button
+            type="button"
+            class="mobile-tool-btn lang-badge"
+            (click)="i18n.toggleLanguage()"
+            aria-label="Toggle language"
+          >
+            <span>{{ i18n.isAmharic() ? 'EN' : 'አማ' }}</span>
+          </button>
+          @if (isLoggedIn()) {
+            <a [routerLink]="getDashboardLink()" class="mobile-tool-btn" title="Dashboard" aria-label="Dashboard">
+              <mat-icon>dashboard</mat-icon>
+            </a>
+          } @else {
+            <a routerLink="/login" class="mobile-tool-btn" title="Sign In" aria-label="Sign In">
+              <mat-icon>login</mat-icon>
+            </a>
+          }
+        </div>
+
+        <!-- 3 Clinical Meta Widgets with Golden/Amber Outline Icons (Desktop & Tablet) -->
+        <div class="replica-meta-widgets">
+          <!-- Widget 1: Working Hours -->
+          <div class="meta-widget">
+            <svg class="meta-svg-icon" viewBox="0 0 24 24" fill="none" stroke="#df9645" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <div class="meta-text">
+              <span class="meta-line-top">{{ i18n.isAmharic() ? 'ሰኞ - አርብ 8AM - 7PM' : 'Monday - Friday 8AM - 7PM' }}</span>
+              <span class="meta-line-sub">{{ i18n.isAmharic() ? 'ቅዳሜና እሁድ - ዝግ ነው' : 'Saturday and Sunday - CLOSED' }}</span>
+            </div>
+          </div>
+
+          <!-- Widget 2: Direct Helpline & Email -->
+          <div class="meta-widget">
+            <svg class="meta-svg-icon" viewBox="0 0 24 24" fill="none" stroke="#df9645" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+              <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            </svg>
+            <div class="meta-text">
+              <a href="tel:+251116678900" class="meta-line-top">+251 11 667 8900</a>
+              <a href="mailto:support@mediguide.et" class="meta-line-sub">support@mediguide.et</a>
+            </div>
+          </div>
+
+          <!-- Widget 3: Location Pin -->
+          <div class="meta-widget">
+            <svg class="meta-svg-icon" viewBox="0 0 24 24" fill="none" stroke="#df9645" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <div class="meta-text">
+              <span class="meta-line-top">{{ i18n.isAmharic() ? 'ቦሌ ክፍለ ከተማ' : 'Bole Sub-City' }}</span>
+              <span class="meta-line-sub">{{ i18n.isAmharic() ? 'አዲስ አበባ፣ ኢትዮጵያ' : 'Addis Ababa, Ethiopia' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 2: SUBTLE HORIZONTAL DIVIDER -->
+      <div class="replica-nav-divider"></div>
+
+      <!-- ROW 3: NAVBAR (TRANSPARENT ON HERO) -->
+      <nav class="replica-navbar">
+        <div class="replica-nav-links">
+          <a routerLink="/" class="nav-item active">{{ i18n.isAmharic() ? 'መነሻ' : 'Home' }}</a>
+          <a routerLink="/about" class="nav-item">{{ i18n.isAmharic() ? 'ስለ እኛ' : 'About us' }}</a>
+          <a href="#services" (click)="scrollToSection('services'); $event.preventDefault()" class="nav-item">{{ i18n.isAmharic() ? 'አገልግሎቶች' : 'Services' }}</a>
+          <a href="#how-it-works" (click)="scrollToSection('how-it-works'); $event.preventDefault()" class="nav-item">{{ i18n.isAmharic() ? 'አሰራር' : 'How It Works' }}</a>
+          <a href="#team" (click)="scrollToSection('team'); $event.preventDefault()" class="nav-item">{{ i18n.isAmharic() ? 'ስፔሻሊስቶች' : 'Specialists' }}</a>
+          <a routerLink="/contact" class="nav-item">{{ i18n.isAmharic() ? 'ያግኙን' : 'Contact us' }}</a>
+        </div>
+
+        <div class="replica-nav-right">
+          <!-- Translucent Search Box with 'Looking for...' -->
+          <div class="replica-search-box">
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (keyup.enter)="onSearch()"
+              [placeholder]="i18n.isAmharic() ? 'ፈልግ...' : 'Looking for...'"
+              class="replica-search-input"
+            />
+            <button type="button" (click)="onSearch()" class="replica-search-btn" aria-label="Search">
+              <mat-icon>search</mat-icon>
+            </button>
+          </div>
+
+          <!-- Actual SVG Social Media Icons (Facebook, LinkedIn, X/Twitter, Telegram) -->
+          <div class="replica-socials">
+            <a href="https://facebook.com/mediguide" target="_blank" rel="noopener" class="replica-social-link" title="Facebook" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor" class="social-svg-icon">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+              </svg>
+            </a>
+            <a href="https://linkedin.com/company/mediguide" target="_blank" rel="noopener" class="replica-social-link" title="LinkedIn" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" fill="currentColor" class="social-svg-icon">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"></path>
+                <circle cx="4" cy="4" r="2"></circle>
+              </svg>
+            </a>
+            <a href="https://x.com/mediguide" target="_blank" rel="noopener" class="replica-social-link" title="X (Twitter)" aria-label="X (Twitter)">
+              <svg viewBox="0 0 24 24" fill="currentColor" class="social-svg-icon">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+              </svg>
+            </a>
+            <a href="https://t.me/mediguide" target="_blank" rel="noopener" class="replica-social-link" title="Telegram" aria-label="Telegram">
+              <svg viewBox="0 0 24 24" fill="currentColor" class="social-svg-icon">
+                <path d="m20.665 3.717-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.313 4.673c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.414z"></path>
+              </svg>
+            </a>
+          </div>
+
+          <!-- Auxiliary Controls: Theme, Language, Login/Dashboard -->
+          <div class="replica-aux-controls">
+            <button
+              type="button"
+              class="replica-ghost-btn"
+              (click)="themeService.toggleTheme()"
+              [title]="themeService.isDark() ? i18n.t('theme.light') : i18n.t('theme.dark')"
+              aria-label="Toggle theme"
+            >
+              <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+            </button>
+
+            <button
+              type="button"
+              class="replica-ghost-btn lang-label"
+              (click)="i18n.toggleLanguage()"
+              aria-label="Toggle language"
+            >
+              <span>{{ i18n.isAmharic() ? 'EN' : 'አማ' }}</span>
+            </button>
+
+            @if (isLoggedIn()) {
+              <a [routerLink]="getDashboardLink()" class="replica-cta-pill">
+                <mat-icon>dashboard</mat-icon>
+                <span>{{ i18n.t('nav.dashboard') }}</span>
+              </a>
+            } @else {
+              <a routerLink="/login" class="replica-auth-link">
+                <span>{{ i18n.t('nav.signIn') }}</span>
+              </a>
+            }
+          </div>
+        </div>
+      </nav>
+
+      <!-- ROW 4: HERO CONTENT (Dynamic Synchronized Typography & Hero Buttons) -->
+      <div class="replica-hero-body">
+        <div class="replica-hero-content">
+          <!-- DYNAMIC HERO TEXT SLIDES (Synchronized with Background Slide) -->
+          <div class="hero-text-slides">
+            @for (slide of heroSlides; track slide.image; let idx = $index) {
+              <div class="hero-text-slide" [class.active]="currentHeroIndex() === idx">
+                <h1 class="replica-hero-title">
+                  @if (i18n.isAmharic()) {
+                    {{ slide.prefixAm }} <span class="highlight-cyan">{{ slide.highlightAm }}</span><br>
+                    {{ slide.suffixAm }}
+                  } @else {
+                    {{ slide.prefix }} <span class="highlight-cyan">{{ slide.highlight }}</span><br>
+                    {{ slide.suffix }}
+                  }
+                </h1>
+
+                <p class="replica-hero-desc">
+                  {{ i18n.isAmharic() ? slide.descAm : slide.desc }}
+                </p>
+              </div>
+            }
+          </div>
+
+          <!-- DYNAMIC HERO BUTTONS (Logged in vs Guest) -->
+          <div class="replica-hero-actions">
+            @if (isLoggedIn()) {
+              <a [routerLink]="getDashboardLink()" class="replica-btn-solid">
+                <span>{{ i18n.isAmharic() ? 'ወደ ዳሽቦርድ ሂድ' : 'Go to Dashboard' }}</span>
+                <mat-icon class="btn-arrow-icon">arrow_forward</mat-icon>
+              </a>
+              <a (click)="scrollToSection('services')" class="replica-btn-outline">
+                <span>{{ i18n.isAmharic() ? 'አገልግሎቶች ይመልከቱ >' : 'Explore Services >' }}</span>
+              </a>
+            } @else {
+              <a (click)="scrollToSection('services')" class="replica-btn-outline">
+                <span>{{ i18n.isAmharic() ? 'ተጨማሪ መረጃ >' : 'More details >' }}</span>
+              </a>
+              <a routerLink="/register" class="replica-btn-solid">
+                <span>{{ i18n.isAmharic() ? 'ምክክር ይጠይቁ >' : 'Book appointment >' }}</span>
+              </a>
+            }
+          </div>
+
+          <!-- Dynamic Hero Slider Indicator Dots -->
+          <div class="hero-slider-dots">
+            @for (slide of heroSlides; track slide.image; let idx = $index) {
+              <button
+                type="button"
+                class="dot-btn"
+                [class.active]="currentHeroIndex() === idx"
+                (click)="setHeroIndex(idx)"
+                [attr.aria-label]="'Go to hero slide ' + (idx + 1)"
+              ></button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 FLOATING HIGHLIGHT CARDS (From Template Page 1: Professional staff, Affordable prices, Partners, Consult) -->
+  <section class="highlight-cards-section">
+    <div class="cards-container">
+      <div class="highlight-grid">
+        
+        <!-- Card 1: Professional Staff -->
+        <div class="highlight-card card-teal-dark">
+          <div class="card-top-icon">
+            <mat-icon>people</mat-icon>
+          </div>
+          <h3>{{ i18n.isAmharic() ? 'ሙያዊ የህክምና ቡድን' : 'Professional Staff' }}</h3>
+          <p>
+            {{ i18n.isAmharic()
+              ? 'የተረጋገጡ ከፍተኛ ስፔሻሊስቶች፣ የሆስፒታል መምሪያ ኃላፊዎችና እውቅና ያላቸው የባህል ህክምና ባለሙያዎች።'
+              : 'FMHACA credentialed medical specialists, senior hospital consultants and certified therapists.' }}
+          </p>
+          <a (click)="scrollToSection('team')" class="card-link">
+            <span>{{ i18n.isAmharic() ? 'ተጨማሪ ያንብቡ >' : 'Read more >' }}</span>
+          </a>
+        </div>
+
+        <!-- Card 2: Affordable Prices / Transparent SLAs -->
+        <div class="highlight-card card-teal-mid">
+          <div class="card-top-icon">
+            <mat-icon>payments</mat-icon>
+          </div>
+          <h3>{{ i18n.isAmharic() ? 'ግልጽና ተመጣጣኝ ዋጋ' : 'Affordable Prices' }}</h3>
+          <p>
+            {{ i18n.isAmharic()
+              ? 'ግልጽ የምላሽ ሰዓት ደረጃዎች (SLAs) ያለምንም ድብቅ የደላላ ክፍያ ወይም ያልታሰበ ጭማሪ።'
+              : 'Transparent turnaround SLA tiers with zero brokerage markups or hidden hospital fees.' }}
+          </p>
+          <a (click)="scrollToSection('response-tiers')" class="card-link btn-pill">
+            <span>{{ i18n.isAmharic() ? 'የዋጋ ዝርዝር ይመልከቱ >' : 'View turnaround tiers >' }}</span>
+          </a>
+        </div>
+
+        <!-- Card 3: Care Partners & Diaspora Coordination -->
+        <div class="highlight-card card-blue-soft">
+          <div class="card-top-icon">
+            <mat-icon>handshake</mat-icon>
+          </div>
+          <h3>{{ i18n.isAmharic() ? 'የዲያስፖራ ቅንጅት' : 'Care Partners & Diaspora' }}</h3>
+          <p>
+            {{ i18n.isAmharic()
+              ? 'ለዲያስፖራው ማህበረሰብ የተሟላ የቤተሰብ ህክምና ክትትል፣ የሆስፒታል አድሚሽን እና የላብራቶሪ ድጋፍ።'
+              : 'End-to-end liaison, diagnostic reviews, hospital coordination and progress reporting for families abroad.' }}
+          </p>
+          <a routerLink="/about" class="card-link">
+            <span>{{ i18n.isAmharic() ? 'ተጨማሪ ያንብቡ >' : 'Read more >' }}</span>
+          </a>
+        </div>
+
+        <!-- Card 4: Consult Our Doctors / Quick Selector -->
+        <div class="highlight-card card-blue-deep">
+          <div class="card-top-icon">
+            <mat-icon>medical_information</mat-icon>
+          </div>
+          <h3>{{ i18n.isAmharic() ? 'ከስፔሻሊስቶች ጋር ይመካከሩ' : 'Consult Our Doctors' }}</h3>
+          <p>
+            {{ i18n.isAmharic()
+              ? 'የሚፈልጉትን የህክምና ዘርፍ ይምረጡና ፈጣን የቅድመ-ምርመራ ሂደት በደቂቃዎች ውስጥ ይጀምሩ።'
+              : 'Select the clinical specialty you prefer and initiate intake triage in minutes.' }}
+          </p>
+          <a routerLink="/register" class="card-select-btn">
+            <span>{{ i18n.isAmharic() ? 'ስፔሻሊስት ይምረጡ' : 'Choose a Specialist' }}</span>
+            <mat-icon>expand_more</mat-icon>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 SPECIALTY CARDS WITH CIRCULAR BADGES + WORKING HOURS CARD (From Template Page 1) -->
+  <section class="specialty-showcase-section">
+    <div class="showcase-container">
+      <div class="showcase-grid">
+
+        <!-- 3 Specialty Cards with Circular Badge -->
+        @for (spec of specialties; track spec.id) {
+          <div class="specialty-feature-card">
+            <div class="card-image-wrap">
+              <img [src]="spec.image" [alt]="spec.title" class="specialty-photo" loading="lazy" />
+              <div class="circular-icon-badge">
+                <mat-icon>{{ spec.icon }}</mat-icon>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <span class="specialty-eyebrow">{{ i18n.isAmharic() ? spec.taglineAm : spec.tagline }}</span>
+              <h3 class="specialty-name">{{ i18n.isAmharic() ? spec.titleAm : spec.title }}</h3>
+              <p class="specialty-desc">{{ i18n.isAmharic() ? spec.descAm : spec.desc }}</p>
+              
+              <a (click)="onSpecialtySelected(spec.id)" class="specialty-cta-link">
+                <span>{{ i18n.isAmharic() ? 'ምክክር ጀምር' : 'Consult Specialist' }}</span>
+                <mat-icon>arrow_forward</mat-icon>
+              </a>
+            </div>
+          </div>
+        }
+
+        <!-- 4th Card: WORKING HOURS Card (From Template Page 1) -->
+        <div class="working-hours-card">
+          <div class="hours-header">
+            <h3>{{ i18n.isAmharic() ? 'የስራ ሰዓቶች' : 'WORKING HOURS' }}</h3>
+            <p>{{ i18n.isAmharic() ? 'የክሊኒካል ቅንጅትና የምክክር ሰዓት ሰሌዳ' : 'Clinical coordination & triage consultation schedule' }}</p>
+          </div>
+
+          <div class="schedule-table">
+            <div class="schedule-row">
+              <span class="day">{{ i18n.isAmharic() ? 'ሰኞ' : 'Monday' }}</span>
+              <span class="time">8:00 AM - 8:00 PM</span>
+            </div>
+            <div class="schedule-row">
+              <span class="day">{{ i18n.isAmharic() ? 'ማክሰኞ' : 'Tuesday' }}</span>
+              <span class="time">8:00 AM - 8:00 PM</span>
+            </div>
+            <div class="schedule-row">
+              <span class="day">{{ i18n.isAmharic() ? 'ረቡዕ' : 'Wednesday' }}</span>
+              <span class="time">8:00 AM - 8:00 PM</span>
+            </div>
+            <div class="schedule-row">
+              <span class="day">{{ i18n.isAmharic() ? 'ሐሙስ' : 'Thursday' }}</span>
+              <span class="time">8:00 AM - 8:00 PM</span>
+            </div>
+            <div class="schedule-row">
+              <span class="day">{{ i18n.isAmharic() ? 'አርብ' : 'Friday' }}</span>
+              <span class="time">8:00 AM - 8:00 PM</span>
+            </div>
+            <div class="schedule-row">
+              <span class="day">{{ i18n.isAmharic() ? 'ቅዳሜ' : 'Saturday' }}</span>
+              <span class="time">9:00 AM - 5:00 PM</span>
+            </div>
+            <div class="schedule-row closed-row">
+              <span class="day">{{ i18n.isAmharic() ? 'እሁድ' : 'Sunday' }}</span>
+              <span class="time">{{ i18n.isAmharic() ? 'በተረኛ ስፔሻሊስት' : 'On-Call Triage' }}</span>
+            </div>
+          </div>
+
+          <div class="hours-card-footer">
+            <a routerLink="/contact" mat-flat-button class="hours-book-btn">
+              <mat-icon>calendar_today</mat-icon>
+              <span>{{ i18n.isAmharic() ? 'ቀጠሮ ይያዙ' : 'Book Appointment' }}</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED CLINICAL LEADERSHIP & SIGNATURE (From Template Page 1-2: "Dr. Stephanie / OUR TEAM") -->
+  <section id="leadership" class="leadership-section">
+    <div class="leadership-container">
+      <div class="leadership-grid">
+        <div class="leadership-text-col">
+          <span class="lead-eyebrow">{{ i18n.isAmharic() ? 'ዶ/ር ብሩክ ሰለሞን • ከፍተኛ የነርቭ ስፔሻሊስት' : 'Dr. Brook Solomon • Lead Consultant' }}</span>
+          <h2 class="lead-title">{{ i18n.isAmharic() ? 'የክሊኒካል አመራር ቡድናችን' : 'OUR CLINICAL TEAM' }}</h2>
+          <p class="lead-quote">
+            {{ i18n.isAmharic()
+              ? 'ዶ/ር ብሩክ ሰለሞን እና ከፍተኛ ስፔሻሊስቶቻችን ለእያንዳንዱ ታካሚ ጥራት ያለው፣ ገለልተኛና ታማኝ የህክምና ድጋፍ ለመስጠት ቆርጠው ተነስተዋል። በሜዲ-ጋይድ እኛ የምናተኩረው ህመምተኞች የትኛውንም የህመም ስሜት፣ የተወሳሰበ ምርመራና ጭንቀት በቀላሉ እንዲያልፉ ለመርዳት ነው።'
+              : 'Dr. Brook Solomon is dedicated to providing his patients with the highest standard of evidence-based care. We at Medi-Guide are focused on helping you. After guiding patients through complex neurological conditions and chronic pain over the years, our specialists found their calling to provide independent care.' }}
+          </p>
+
+          <!-- Script Signature Representation -->
+          <div class="signature-box">
+            <svg class="doctor-signature-svg" viewBox="0 0 240 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 45C32 20 54 10 70 25C86 40 50 65 35 55C20 45 65 18 110 32C140 42 160 22 175 35C190 48 205 30 225 40" stroke="#087f8c" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M45 15L55 60M125 18L130 52" stroke="#087f8c" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="signature-caption">Dr. Brook Solomon, MD, Lead Neurologist</span>
+          </div>
+
+          <div class="lead-action-row">
+            <a routerLink="/about" mat-flat-button class="lead-cta-btn">
+              <span>{{ i18n.isAmharic() ? 'ስለ እኛ ተጨማሪ ያንብቡ >' : 'Read more >' }}</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="leadership-photo-col">
+          <div class="lead-photo-frame">
+            <img
+              src="https://images.unsplash.com/photo-1622902046580-2b47f47f5471?auto=format&fit=crop&w=800&q=80"
+              alt="Dr. Brook Solomon"
+              class="lead-photo-img"
+              loading="lazy"
+            />
+            <div class="lead-credential-tag">
+              <mat-icon>verified</mat-icon>
+              <span>FMHACA & MoH Certified</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOCTOR TEAM GRID (From Template Page 2: 4 Doctor Cards) -->
+  <section id="team" class="team-grid-section">
+    <div class="team-container">
+      <div class="section-heading-center">
+        <span class="pill-tag">{{ i18n.isAmharic() ? 'የህክምና ባለሙያዎች' : 'OUR SPECIALISTS' }}</span>
+        <h2>{{ i18n.isAmharic() ? 'የተረጋገጡ የህክምና ስፔሻሊስቶች' : 'Meet Our Verified Medical Team' }}</h2>
+        <p>{{ i18n.isAmharic() ? 'ለቀጥታ ምክክርና ለሁለተኛ አስተያየት ዝግጁ የሆኑ ከፍተኛ የህክምና ባለሙያዎች' : 'Experienced physicians and department heads available for direct telehealth triage & consultation.' }}</p>
+      </div>
+
+      <div class="team-cards-grid">
+        @for (member of team; track member.name) {
+          <div class="doctor-profile-card">
+            <div class="doctor-photo-wrap">
+              <img [src]="member.image" [alt]="member.name" class="doctor-photo" loading="lazy" />
+              <div class="doctor-dept-badge">
+                <mat-icon>{{ member.icon }}</mat-icon>
+              </div>
+            </div>
+
+            <div class="doctor-info-wrap">
+              <span class="doctor-role-title">{{ i18n.isAmharic() ? member.roleAm : member.role }}</span>
+              <h3 class="doctor-full-name">{{ member.name }}</h3>
+              <p class="doctor-bio">{{ i18n.isAmharic() ? member.bioAm : member.bio }}</p>
+
+              <div class="doctor-actions">
+                <a routerLink="/register" class="doctor-consult-btn">
+                  <span>{{ i18n.isAmharic() ? 'ምክክር ጀምር' : 'Consult Doctor' }}</span>
+                  <mat-icon>arrow_forward</mat-icon>
+                </a>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES SECTION (5 Pillars) -->
+  <section id="services" class="services-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag">{{ i18n.isAmharic() ? 'ምን እናቀርባለን?' : 'OUR CORE SERVICES' }}</span>
+        <h2>{{ i18n.t('services.title') }}</h2>
+        <p>{{ i18n.t('services.subtitle') }}</p>
+      </div>
+
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="card-icon"><mat-icon>person_pin</mat-icon></div>
+          <h3>{{ i18n.t('services.consultation') }}</h3>
+          <p>{{ i18n.t('services.consultation.desc') }}</p>
+          <span class="service-tag">{{ i18n.isAmharic() ? 'ሐኪሞችና ቴራፒስቶች' : 'Doctors & Therapists' }}</span>
+        </div>
+
+        <div class="service-card highlight">
+          <div class="card-icon"><mat-icon>nature_people</mat-icon></div>
+          <h3>{{ i18n.t('services.traditional') }}</h3>
+          <p>{{ i18n.t('services.traditional.desc') }}</p>
+          <span class="service-tag">{{ i18n.isAmharic() ? 'በጤና ጥበቃ ፈቃድ ያለው' : 'FMHACA Verified' }}</span>
+        </div>
+
+        <div class="service-card">
+          <div class="card-icon"><mat-icon>assignment</mat-icon></div>
+          <h3>{{ i18n.t('services.planning') }}</h3>
+          <p>{{ i18n.t('services.planning.desc') }}</p>
+          <span class="service-tag">{{ i18n.isAmharic() ? 'የወጪ ትንበያ' : 'Cost Estimation' }}</span>
+        </div>
+
+        <div class="service-card">
+          <div class="card-icon"><mat-icon>flight_takeoff</mat-icon></div>
+          <h3>{{ i18n.t('services.travel') }}</h3>
+          <p>{{ i18n.t('services.travel.desc') }}</p>
+          <span class="service-tag">{{ i18n.isAmharic() ? 'የሀገር ውስጥና ውጭ' : 'Local & Diaspora' }}</span>
+        </div>
+
+        <div class="service-card">
+          <div class="card-icon"><mat-icon>accessible</mat-icon></div>
+          <h3>{{ i18n.t('services.equipment') }}</h3>
+          <p>{{ i18n.t('services.equipment.desc') }}</p>
+          <span class="service-tag">{{ i18n.isAmharic() ? 'አልጋዎችና ዊልቼር' : 'Beds & Wheelchairs' }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" class="how-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag">{{ i18n.isAmharic() ? 'ቀላል አሰራር' : 'HOW IT WORKS' }}</span>
+        <h2>{{ i18n.t('how.title') }}</h2>
+      </div>
+
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="step-num">01</div>
+          <div class="step-icon"><mat-icon>account_circle</mat-icon></div>
+          <h3>{{ i18n.t('how.step1.title') }}</h3>
+          <p>{{ i18n.t('how.step1.desc') }}</p>
+        </div>
+
+        <div class="how-card">
+          <div class="step-num">02</div>
+          <div class="step-icon"><mat-icon>speed</mat-icon></div>
+          <h3>{{ i18n.t('how.step2.title') }}</h3>
+          <p>{{ i18n.t('how.step2.desc') }}</p>
+        </div>
+
+        <div class="how-card">
+          <div class="step-num">03</div>
+          <div class="step-icon"><mat-icon>forum</mat-icon></div>
+          <h3>{{ i18n.t('how.step3.title') }}</h3>
+          <p>{{ i18n.t('how.step3.desc') }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESPONSE TIME TIERS -->
+  <section id="response-tiers" class="tiers-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag">{{ i18n.isAmharic() ? 'የምላሽ ጊዜ' : 'GUARANTEED TURNAROUND' }}</span>
+        <h2>{{ i18n.t('tiers.title') }}</h2>
+        <p>{{ i18n.t('tiers.subtitle') }}</p>
+      </div>
+
+      <div class="tiers-grid">
+        <div class="tier-card standard">
+          <div class="tier-header">
+            <h3>{{ i18n.t('tiers.standard') }}</h3>
+            <span class="tier-time">{{ i18n.t('tiers.standard.time') }}</span>
+          </div>
+          <p>{{ i18n.t('tiers.standard.desc') }}</p>
+          <div class="tier-badge">{{ i18n.t('tiers.standard.badge') }}</div>
+        </div>
+
+        <div class="tier-card expedited highlight">
+          <div class="recommended-badge">{{ i18n.t('tiers.popular') }}</div>
+          <div class="tier-header">
+            <h3>{{ i18n.t('tiers.expedited') }}</h3>
+            <span class="tier-time">{{ i18n.t('tiers.expedited.time') }}</span>
+          </div>
+          <p>{{ i18n.t('tiers.expedited.desc') }}</p>
+          <div class="tier-badge">{{ i18n.t('tiers.expedited.badge') }}</div>
+        </div>
+
+        <div class="tier-card priority">
+          <div class="tier-header">
+            <h3>{{ i18n.t('tiers.priority') }}</h3>
+            <span class="tier-time">{{ i18n.t('tiers.priority.time') }}</span>
+          </div>
+          <p>{{ i18n.t('tiers.priority.desc') }}</p>
+          <div class="tier-badge">{{ i18n.t('tiers.priority.badge') }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LATEST NEWS & MEDICAL GUIDES (From Template Page 2) -->
+  <section id="news" class="latest-news-section">
+    <div class="news-container">
+      <div class="section-heading-center">
+        <span class="pill-tag">{{ i18n.isAmharic() ? 'የቅርብ መረጃዎች' : 'LATEST NEWS' }}</span>
+        <h2>{{ i18n.isAmharic() ? 'የጤና መመሪያዎችና ክሊኒካል ዜናዎች' : 'Clinical Guides & Medical News' }}</h2>
+        <p>{{ i18n.isAmharic() ? 'በኢትዮጵያና በውጭ ለሚገኙ ቤተሰቦች የቀረቡ አዳዲስ የህክምና ግንዛቤዎች' : 'Read our latest guidance from verified practitioners, second opinion tips, and diaspora health guides.' }}</p>
+      </div>
+
+      <div class="news-cards-grid">
+        @for (art of latestNews; track art.title) {
+          <article class="news-card">
+            <div class="news-image-frame">
+              <img [src]="art.image" [alt]="art.title" class="news-img" loading="lazy" />
+              <div class="news-date-badge">
+                <mat-icon>calendar_today</mat-icon>
+                <span>{{ i18n.isAmharic() ? art.dateAm : art.date }}</span>
+              </div>
+            </div>
+
+            <div class="news-content">
+              <span class="news-category-label">{{ i18n.isAmharic() ? art.categoryAm : art.category }}</span>
+              <h3 class="news-title">{{ i18n.isAmharic() ? art.titleAm : art.title }}</h3>
+              <p class="news-excerpt">{{ i18n.isAmharic() ? art.summaryAm : art.summary }}</p>
+              
+              <a routerLink="/about" class="news-read-more">
+                <span>{{ i18n.isAmharic() ? 'ሙሉውን አንብብ >' : 'Read more >' }}</span>
+              </a>
+            </div>
+          </article>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- SPLIT TESTIMONIAL BANNER (From Template Page 2-3: Patient Testimonials + Family Thought) -->
+  <section class="split-testimonials-section">
+    <div class="split-testimonials-container">
+      <div class="split-grid">
+
+        <!-- Left: Patient Testimonials -->
+        <div class="left-testimonials-col">
+          <div class="col-header">
+            <span class="pill-tag">{{ i18n.isAmharic() ? 'የታካሚዎች ምስክርነት' : 'PATIENT TESTIMONIALS' }}</span>
+            <h2>{{ i18n.isAmharic() ? 'የተጠቃሚዎች እውነተኛ አስተያየት' : 'Words of Appreciation from Patients' }}</h2>
+            <p>{{ i18n.isAmharic() ? 'በአገልግሎታችን የተጠቀሙ ታካሚዎችና ቤተሰቦች የተናገሩት' : "It's always the word of mouth that's the best advice. Here are some of our verified patients." }}</p>
+          </div>
+
+          <div class="testimonial-cards-stack">
+            @for (t of testimonials(); track t.id) {
+              <div class="patient-review-card">
+                <div class="review-stars">
+                  @for (star of [1,2,3,4,5]; track star) {
+                    <mat-icon [class.filled]="star <= t.rating">star</mat-icon>
+                  }
+                </div>
+                <p class="review-text">"{{ t.comment }}"</p>
+                <div class="patient-meta-row">
+                  <div class="patient-avatar-badge">
+                    <mat-icon>person</mat-icon>
+                  </div>
+                  <div class="patient-details">
+                    <strong>{{ t.patientName }}</strong>
+                    <span>{{ i18n.isAmharic() ? 'የተረጋገጠ ታካሚ • አዲስ አበባ' : 'Verified Patient • Medi-Guide' }}</span>
+                  </div>
+                  <mat-icon class="verified-tick">verified</mat-icon>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Right: Family / Diaspora Spotlight Card (From Template "A KID'S THOUGHT") -->
+        <div class="right-spotlight-col">
+          <div class="spotlight-card">
+            <div class="quote-mark">“</div>
+            <span class="spotlight-badge">{{ i18n.isAmharic() ? 'የዲያስፖራ ቤተሰብ ድምጽ' : 'DIASPORA FAMILY SPOTLIGHT' }}</span>
+            <h3>{{ i18n.isAmharic() ? 'ለወላጆቼ የተደረገው ቅንጅት ታላቅ እረፍት ሰጥቶናል' : 'Peace of Mind for Diaspora Families' }}</h3>
+            <p>
+              {{ i18n.isAmharic()
+                ? '"በአሜሪካ ሆኜ በአዲስ አበባ ለሚገኙት እናቴ የነርቭ ስፔሻሊስት ማግኘት፣ ምርመራቸውን በኦንላይን መከታተልና ቀጥተኛ ክፍያ መፈጸም የቻልኩት በሜዲ-ጋይድ አማካኝነት ነው። እውነተኛ የህክምና አጋር ናቸው።"'
+                : '"Coordinating neurology triage and medication delivery for my elderly mother in Addis Ababa while living in California was stress-free with Medi-Guide. Fast SLA and transparent reporting."' }}
+            </p>
+            <div class="spotlight-author">
+              <strong>Sara K.</strong>
+              <span>California, USA (Diaspora)</span>
+            </div>
+            <a routerLink="/register" class="spotlight-btn">
+              <span>{{ i18n.isAmharic() ? 'ምክክር ጀምር >' : 'Start Coordination >' }}</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- WORKING HOURS & CARE CENTER MAP OVERLAY SECTION (Interactive Addis Ababa Map) -->
+  <section class="care-center-map-section">
+    <!-- Live Interactive Google Maps Embed of Addis Ababa Bole -->
+    <div class="map-iframe-wrapper">
+      <iframe
+        src="https://maps.google.com/maps?q=Bole%20Sub-City%2C%20Addis%20Ababa%2C%20Ethiopia&t=&z=14&ie=UTF8&iwloc=&output=embed"
+        class="map-iframe"
+        loading="lazy"
+        allowfullscreen
+        title="Medi-Guide Care Center Map - Addis Ababa"
+      ></iframe>
+    </div>
+
+    <div class="map-overlay-container">
+      <div class="map-floating-card">
+        <div class="floating-header">
+          <span class="map-card-badge">{{ i18n.isAmharic() ? 'የአካል ማስተባበሪያ' : 'Care Center Liaison' }}</span>
+          <h3>{{ i18n.isAmharic() ? 'የስራ ሰዓቶችና ማስተባበሪያ ማዕከል' : 'WORKING HOURS & CONTACT' }}</h3>
+        </div>
+
+        <div class="floating-schedule">
+          <div class="sched-item">
+            <span>{{ i18n.isAmharic() ? 'ሰኞ - አርብ፡' : 'Mon - Fri:' }}</span>
+            <strong>08:00 - 20:00</strong>
+          </div>
+          <div class="sched-item">
+            <span>{{ i18n.isAmharic() ? 'ቅዳሜ፡' : 'Saturday:' }}</span>
+            <strong>09:00 - 18:00</strong>
+          </div>
+          <div class="sched-item">
+            <span>{{ i18n.isAmharic() ? 'እሁድ፡' : 'Sunday:' }}</span>
+            <strong>{{ i18n.isAmharic() ? 'የተረኛ ስፔሻሊስት' : 'On-Call Triage (09:00 - 18:00)' }}</strong>
+          </div>
+        </div>
+
+        <div class="floating-contact">
+          <h4>{{ i18n.isAmharic() ? 'የቀጥታ መረጃ' : 'CONTACT DETAILS' }}</h4>
+          <p><mat-icon>phone</mat-icon> <a href="tel:+251116678900">+251 11 667 8900</a></p>
+          <p><mat-icon>email</mat-icon> <a href="mailto:contact@mediguide.et">contact@mediguide.et</a></p>
+          <p><mat-icon>location_on</mat-icon> Bole Sub-City, Road 4, Addis Ababa, Ethiopia</p>
+        </div>
+
+        <div class="floating-card-actions">
+          <a routerLink="/contact" mat-flat-button class="floating-card-cta">
+            <mat-icon>calendar_month</mat-icon>
+            <span>{{ i18n.isAmharic() ? 'ቀጠሮ ይያዙ' : 'Book Appointment' }}</span>
+          </a>
+          <a href="https://maps.google.com/?q=Bole+Sub-City+Addis+Ababa" target="_blank" rel="noopener" class="floating-card-dir">
+            <mat-icon>directions</mat-icon>
+            <span>{{ i18n.isAmharic() ? 'አቅጣጫ አሳይ' : 'Get Directions' }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER SUBSCRIPTION STRIP (From Template Page 3: "NEVER MISS NEW LAUNCHES!") -->
+  <section class="newsletter-strip">
+    <div class="newsletter-container">
+      <div class="newsletter-text">
+        <mat-icon>campaign</mat-icon>
+        <span>
+          {{ i18n.isAmharic()
+            ? 'አዳዲስ የጤና መመሪያዎችንና የዲያስፖራ ህክምና ዝመናዎችን ያግኙ!'
+            : 'NEVER MISS MEDICAL & DIASPORA HEALTH UPDATES!' }}
+        </span>
+      </div>
+
+      <form (submit)="onSubscribeNewsletter(); $event.preventDefault()" class="newsletter-form">
+        <input
+          type="email"
+          [(ngModel)]="newsletterEmail"
+          name="newsletterEmail"
+          [placeholder]="i18n.isAmharic() ? 'የኢሜይል አድራሻዎን ያስገቡ...' : 'Enter your email address...'"
+          class="newsletter-input"
+          required
+        />
+        <button type="submit" class="newsletter-btn">
+          <span>{{ i18n.isAmharic() ? 'ይመዝገቡ' : 'SUBSCRIBE' }}</span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- EXACT REPLICA FOOTER (From Uploaded Screenshot) -->
+  <footer class="mediz-footer">
+    <div class="footer-main-container">
+      <div class="mediz-footer-grid">
+        <!-- Column 1: Brand & Contact -->
+        <div class="footer-col brand-col">
+          <a routerLink="/" class="footer-brand-lockup">
+            <div class="brand-logo-mark">
+              <img src="/assets/emblem.png" alt="Medi-Guide" class="footer-emblem-img" />
+            </div>
+            <div class="brand-name-group">
+              <span class="brand-title">Medi-Guide</span>
+              <span class="brand-subtitle">{{ i18n.isAmharic() ? 'የህክምና ማዕከል' : 'Medical Center' }}</span>
+            </div>
+          </a>
+
+          <div class="footer-address">
+            <p>Box 3233</p>
+            <p>1810 Kings Way</p>
+            <p>{{ i18n.isAmharic() ? 'ቦሌ መንገድ፣ አዲስ አበባ፣ ኢትዮጵያ' : 'Bole Road, Addis Ababa, Ethiopia' }}</p>
+          </div>
+
+          <div class="footer-direct-contacts">
+            <a href="tel:+251116678900" class="contact-link phone-link">
+              <svg class="contact-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <span>+251 11 667 8900</span>
+            </a>
+
+            <a href="mailto:contact@mediguide.et" class="contact-link email-link">
+              <svg class="contact-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+              </svg>
+              <span>contact@mediguide.et</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Column 2: About Us -->
+        <div class="footer-col">
+          <h4 class="footer-heading">{{ i18n.isAmharic() ? 'ስለ እኛ' : 'About Us' }}</h4>
+          <ul class="footer-menu-list">
+            <li><a routerLink="/about"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'ተልዕኳችንና እሴቶቻችን' : 'Our Mission & Values' }}</a></li>
+            <li><a routerLink="/about"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'የህክምና አመራር' : 'Leadership' }}</a></li>
+            <li><a href="#how-it-works" (click)="scrollToSection('how-it-works'); $event.preventDefault()"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'የአሰራር ለውጥ' : 'Transformation' }}</a></li>
+            <li><a routerLink="/about"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'እውቅናና ሽልማቶች' : 'Awards' }}</a></li>
+            <li><a routerLink="/about"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'የብዝሃ-ዘርፍ ስፔሻሊስቶች' : 'Diversity is Our Specialty' }}</a></li>
+            <li><a href="#news" (click)="scrollToSection('news'); $event.preventDefault()"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'መረጃዎችና ሪፖርቶች' : 'Publications & Reports' }}</a></li>
+            <li><a routerLink="/about"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'ደንቦችና አሰራሮች' : 'Policies & Procedures' }}</a></li>
+          </ul>
+        </div>
+
+        <!-- Column 3: Our Services -->
+        <div class="footer-col">
+          <h4 class="footer-heading">{{ i18n.isAmharic() ? 'አገልግሎቶቻችን' : 'Our Services' }}</h4>
+          <ul class="footer-menu-list">
+            <li><a href="#services" (click)="scrollToSection('services'); $event.preventDefault()"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'የሳንባ ህክምና' : 'Lung Diseases' }}</a></li>
+            <li><a href="#services" (click)="scrollToSection('services'); $event.preventDefault()"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'የአጥንትና መገጣጠሚያ' : 'Orthopaedic' }}</a></li>
+            <li><a href="#services" (click)="scrollToSection('services'); $event.preventDefault()"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'ፋርማሲና መድሃኒት' : 'Pharmacy' }}</a></li>
+            <li><a href="#services" (click)="scrollToSection('services'); $event.preventDefault()"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'የስፖርት ጉዳት' : 'Sport Injury' }}</a></li>
+            <li><a href="#services" (click)="scrollToSection('services'); $event.preventDefault()"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'የልብ ጤና' : 'Heart' }}</a></li>
+            <li><a href="#services" (click)="scrollToSection('services'); $event.preventDefault()"><span class="arrow">→</span> {{ i18n.isAmharic() ? 'የጥርስ ህክምና' : 'Dental Service' }}</a></li>
+          </ul>
+        </div>
+
+        <!-- Column 4: Hospital Hours -->
+        <div class="footer-col hours-col">
+          <h4 class="footer-heading">{{ i18n.isAmharic() ? 'የሆስፒታል ሰዓቶች' : 'Hospital Hours' }}</h4>
+          
+          <div class="hours-schedule">
+            <div class="hour-row">
+              <div class="day-slot">
+                <svg class="hour-clock-icon" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>{{ i18n.isAmharic() ? 'ሰኞ - አርብ' : 'Monday - Friday' }}</span>
+              </div>
+              <span class="time-slot">08:00 - 20:00</span>
+            </div>
+
+            <div class="hour-row">
+              <div class="day-slot">
+                <svg class="hour-clock-icon" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>{{ i18n.isAmharic() ? 'ቅዳሜ' : 'Saturday' }}</span>
+              </div>
+              <span class="time-slot">09:00 - 18:00</span>
+            </div>
+
+            <div class="hour-row">
+              <div class="day-slot">
+                <svg class="hour-clock-icon" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>{{ i18n.isAmharic() ? 'እሁድ' : 'Sunday' }}</span>
+              </div>
+              <span class="time-slot">09:00 - 18:00</span>
+            </div>
+          </div>
+
+          <div class="emergency-badge-box">
+            <span>{{ i18n.isAmharic() ? 'ድንገተኛ እንክብካቤ : 24 ሰዓት' : 'Emergency : 24 hours' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Strip -->
+    <div class="footer-bottom-bar">
+      <div class="footer-bottom-container">
+        <!-- Blue Social Media Icons -->
+        <div class="footer-social-icons">
+          <a href="https://facebook.com/mediguide" target="_blank" rel="noopener" class="footer-social-btn" aria-label="Facebook">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+            </svg>
+          </a>
+
+          <a href="https://linkedin.com/company/mediguide" target="_blank" rel="noopener" class="footer-social-btn" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"></path>
+              <circle cx="4" cy="4" r="2"></circle>
+            </svg>
+          </a>
+
+          <a href="https://t.me/mediguide" target="_blank" rel="noopener" class="footer-social-btn" aria-label="Telegram">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="m20.665 3.717-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.313 4.673c.46 0 .663-.211.921-.46l2.211-2.15 4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.414z"></path>
+            </svg>
+          </a>
+
+          <a href="https://x.com/mediguide" target="_blank" rel="noopener" class="footer-social-btn" aria-label="X">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+            </svg>
+          </a>
+        </div>
+
+        <!-- Copyright Text -->
+        <div class="footer-copyright">
+          <span>COPYRIGHT 2026 MEDI-GUIDE, ALL RIGHT RESERVED</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="mobile-bottom-bar" aria-label="Mobile Navigation">
+    <a routerLink="/" class="active">
+      <mat-icon>home</mat-icon>
+      <span>{{ i18n.t('nav.home') }}</span>
+    </a>
+    <a routerLink="/about">
+      <mat-icon>info</mat-icon>
+      <span>{{ i18n.t('nav.about') }}</span>
+    </a>
+    <a href="#services">
+      <mat-icon>medical_services</mat-icon>
+      <span>{{ i18n.t('nav.services') }}</span>
+    </a>
+    <a href="#team">
+      <mat-icon>groups</mat-icon>
+      <span>{{ i18n.isAmharic() ? 'ሐኪሞች' : 'Doctors' }}</span>
+    </a>
+    <a routerLink="/contact">
+      <mat-icon>contact_support</mat-icon>
+      <span>{{ i18n.t('nav.contact') }}</span>
+    </a>
+  </nav>
+</div>

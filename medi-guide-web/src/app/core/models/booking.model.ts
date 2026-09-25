@@ -14,6 +14,11 @@ export interface Booking {
   amount: number;
   notes: string | null;
   createdAt: string;
+  isReferralPendingApproval?: boolean;
+  referredToAgentId?: string | null;
+  referredToAgentName?: string | null;
+  referralReason?: string | null;
+  referralClinicalNotes?: string | null;
 }
 
 export interface CreateBookingRequest {
@@ -28,6 +33,21 @@ export interface PagedResult<T> {
   totalCount: number;
   page: number;
   pageSize: number;
+}
+
+export interface SimulatePaymentRequest {
+  paymentMethod?: string;
+  transactionReference?: string;
+}
+
+export interface ReferBookingRequest {
+  targetAgentId: string;
+  reason: string;
+  clinicalNotes?: string;
+}
+
+export interface RejectReferralRequest {
+  reason?: string;
 }
 
 export interface BookingQuery {

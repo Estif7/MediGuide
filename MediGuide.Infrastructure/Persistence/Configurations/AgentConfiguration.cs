@@ -15,6 +15,9 @@ public class AgentConfiguration : IEntityTypeConfiguration<Agent>
         builder.Property(x => x.FullName).IsRequired().HasMaxLength(150);
         builder.Property(x => x.Email).IsRequired().HasMaxLength(150);
         builder.Property(x => x.PhoneNumber).IsRequired().HasMaxLength(30);
+        builder.Property(x => x.Title).HasMaxLength(150);
+        builder.Property(x => x.Department).HasMaxLength(150);
+        builder.Property(x => x.Specialty).HasMaxLength(150);
 
         builder.HasIndex(x => x.Email).IsUnique();
     }

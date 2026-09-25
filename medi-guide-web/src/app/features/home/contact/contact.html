@@ -1,0 +1,334 @@
+<div class="contact-page">
+  <!-- PUBLIC NAVBAR -->
+  <header class="public-navbar">
+    <div class="nav-container">
+      <a routerLink="/" class="brand-capsule">
+        <div class="brand-emblem-badge">
+          <img src="/assets/emblem.png" alt="Medi-Guide Emblem" class="emblem-img" />
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">MEDI-GUIDE</span>
+          <span class="brand-sub">ETHIOPIA</span>
+        </div>
+      </a>
+
+      <!-- Ordered: About Us - Services - How It Works - Contact Us -->
+      <nav class="desktop-nav">
+        <a routerLink="/about" class="nav-link">{{ i18n.t('nav.about') }}</a>
+        <a routerLink="/" fragment="services" class="nav-link">{{ i18n.t('nav.services') }}</a>
+        <a routerLink="/" fragment="how-it-works" class="nav-link">{{ i18n.t('nav.howItWorks') }}</a>
+        <a routerLink="/contact" class="nav-link active">{{ i18n.t('nav.contact') }}</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button
+          type="button"
+          mat-icon-button
+          class="theme-btn"
+          (click)="themeService.toggleTheme()"
+          [matTooltip]="themeService.isDark() ? i18n.t('theme.light') : i18n.t('theme.dark')"
+          aria-label="Toggle theme"
+        >
+          <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+
+        <button type="button" mat-stroked-button class="lang-btn" (click)="i18n.toggleLanguage()" aria-label="Toggle language">
+          <mat-icon>translate</mat-icon>
+          <span>{{ i18n.isAmharic() ? 'English' : 'አማርኛ' }}</span>
+        </button>
+
+        @if (isLoggedIn()) {
+          <a [routerLink]="getDashboardLink()" mat-flat-button class="cta-pill">
+            <mat-icon>dashboard</mat-icon>
+            <span>{{ i18n.t('nav.dashboard') }}</span>
+          </a>
+        } @else {
+          <a routerLink="/login" mat-button class="login-btn">
+            <span>{{ i18n.t('nav.signIn') }}</span>
+          </a>
+          <a routerLink="/register" mat-flat-button class="cta-pill">
+            <span>{{ i18n.isAmharic() ? 'ምክክር ይጠይቁ' : 'Consult Now' }}</span>
+          </a>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO BANNER -->
+  <section class="contact-hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-container">
+      <span class="hero-tag">
+        <mat-icon>support_agent</mat-icon>
+        {{ i18n.isAmharic() ? 'ያግኙን • የህክምና ድጋፍ መረጃ' : 'CONTACT & CARE COORDINATION' }}
+      </span>
+      <h1>
+        {{ i18n.isAmharic()
+          ? 'ጥያቄ ወይም የህክምና ምክክር ይፈልጋሉ? ቡድናችን ዝግጁ ነው።'
+          : 'Speak with Our Dedicated Care Navigation Specialists' }}
+      </h1>
+      <p class="hero-subtext">
+        {{ i18n.isAmharic()
+          ? 'ለአጠቃላይ መረጃ፣ ለዲያስፖራ የቤተሰብ ህክምና ቅንጅት፣ ወይም ለክሊኒካል ድጋፍ በቀጥታ ያግኙን።'
+          : 'Whether you need specialized intake assistance, diaspora coordination, or travel planning, our clinical team is here for you.' }}
+      </p>
+    </div>
+  </section>
+
+  <!-- CONTACT CONTENT & FORM -->
+  <section class="contact-main-section">
+    <div class="content-container">
+      <div class="contact-split-grid">
+        
+        <!-- LEFT: INFO & CHANNELS -->
+        <div class="info-column">
+          <div class="channel-card">
+            <div class="channel-icon phone-icon"><mat-icon>phone_in_talk</mat-icon></div>
+            <div class="channel-content">
+              <h3>{{ i18n.isAmharic() ? 'ቀጥታ የስልክ መስመሮች' : 'Direct Helpline' }}</h3>
+              <p>{{ i18n.isAmharic() ? 'ከሰኞ - ቅዳሜ ከጧቱ 2:00 - ማታ 2:00 (EAT)' : 'Monday - Saturday: 8:00 AM - 8:00 PM EAT' }}</p>
+              <div class="contact-links">
+                <a href="tel:+251116678900">+251 11 667 8900</a>
+                <a href="tel:+251911234567">+251 91 123 4567</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="channel-card">
+            <div class="channel-icon email-icon"><mat-icon>email</mat-icon></div>
+            <div class="channel-content">
+              <h3>{{ i18n.isAmharic() ? 'የኢሜይል አድራሻዎች' : 'Email Desks' }}</h3>
+              <p>{{ i18n.isAmharic() ? 'የ 24 ሰዓት የኢሜይል ምላሽ' : '24-hour turnaround on care inquiries' }}</p>
+              <div class="contact-links">
+                <a href="mailto:support@mediguide.et">support@mediguide.et</a>
+                <a href="mailto:consult@mediguide.et">consult@mediguide.et</a>
+                <a href="mailto:diaspora@mediguide.et">diaspora@mediguide.et</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="channel-card">
+            <div class="channel-icon location-icon"><mat-icon>location_on</mat-icon></div>
+            <div class="channel-content">
+              <h3>{{ i18n.isAmharic() ? 'የቢሮ አድራሻ' : 'Headquarters & Office' }}</h3>
+              <p>{{ i18n.isAmharic() ? 'ቦሌ ክፍለ ከተማ፣ አትላስ ህንፃ 4ኛ ፎቅ' : 'Bole Sub-City, Atlas Building 4th Floor' }}</p>
+              <span class="office-subtext">Addis Ababa, Ethiopia</span>
+            </div>
+          </div>
+
+          <div class="hours-card">
+            <h4><mat-icon>schedule</mat-icon> {{ i18n.isAmharic() ? 'የስራ ሰዓት' : 'Operational Hours' }}</h4>
+            <div class="hours-row">
+              <span>{{ i18n.isAmharic() ? 'ሰኞ - አርብ:' : 'Mon - Fri:' }}</span>
+              <strong>8:00 AM – 8:00 PM EAT</strong>
+            </div>
+            <div class="hours-row">
+              <span>{{ i18n.isAmharic() ? 'ቅዳሜ:' : 'Saturday:' }}</span>
+              <strong>8:30 AM – 5:00 PM EAT</strong>
+            </div>
+            <div class="hours-row">
+              <span>{{ i18n.isAmharic() ? 'እሁድ:' : 'Sunday:' }}</span>
+              <strong class="urgent-text">{{ i18n.isAmharic() ? 'የኦንላይን ጥያቄዎች ብቻ' : 'Digital Intake Active' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: INTERACTIVE FORM -->
+        <div class="form-column">
+          <div class="form-card">
+            <div class="form-header">
+              <h2>{{ i18n.isAmharic() ? 'መልዕክት ይላኩልን' : 'Send a Direct Inquiry' }}</h2>
+              <p>{{ i18n.isAmharic() ? 'የህክምና አስተባባሪዎቻችን በአጭር ጊዜ ውስጥ መልስ ይሰጣሉ።' : 'Fill out the form below and our care desk will get back to you.' }}</p>
+            </div>
+
+            @if (submitted()) {
+              <div class="form-success-banner">
+                <mat-icon>check_circle</mat-icon>
+                <div>
+                  <strong>{{ i18n.isAmharic() ? 'መልዕክትዎ ደርሶናል!' : 'Inquiry Received!' }}</strong>
+                  <p>{{ i18n.isAmharic() ? 'ስላነጋገሩን እናመሰግናለን። የህክምና አስተባባሪ ቡድናችን በቅርቡ ያነጋግርዎታል።' : 'Thank you for reaching out. A healthcare coordination officer will review your request.' }}</p>
+                </div>
+              </div>
+            }
+
+            <form (ngSubmit)="submitContact()" class="contact-form">
+              <div class="form-grid-2">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ i18n.isAmharic() ? 'ሙሉ ስም' : 'Full Name' }} *</mat-label>
+                  <mat-icon matPrefix>person</mat-icon>
+                  <input matInput [ngModel]="fullName()" (ngModelChange)="fullName.set($event)" name="fullName" placeholder="Abebe Bikila" required />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ i18n.isAmharic() ? 'ኢሜይል አድራሻ' : 'Email Address' }} *</mat-label>
+                  <mat-icon matPrefix>mail</mat-icon>
+                  <input matInput type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" placeholder="patient@example.com" required />
+                </mat-form-field>
+              </div>
+
+              <div class="form-grid-2">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ i18n.isAmharic() ? 'ስልክ ቁጥር' : 'Phone Number' }}</mat-label>
+                  <mat-icon matPrefix>phone</mat-icon>
+                  <input matInput [ngModel]="phone()" (ngModelChange)="phone.set($event)" name="phone" placeholder="+251 91 123 4567" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ i18n.isAmharic() ? 'የጥያቄው አይነት' : 'Inquiry Category' }}</mat-label>
+                  <mat-icon matPrefix>category</mat-icon>
+                  <mat-select [ngModel]="inquiryType()" (ngModelChange)="inquiryType.set($event)" name="inquiryType">
+                    @for (opt of inquiryOptions; track opt.value) {
+                      <mat-option [value]="opt.value">
+                        {{ i18n.isAmharic() ? opt.labelAm : opt.labelEn }}
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ i18n.isAmharic() ? 'መልዕክትዎ' : 'Your Message / Clinical Need' }} *</mat-label>
+                <mat-icon matPrefix>edit_note</mat-icon>
+                <textarea
+                  matInput
+                  [ngModel]="message()"
+                  (ngModelChange)="message.set($event)"
+                  name="message"
+                  rows="4"
+                  [placeholder]="i18n.isAmharic() ? 'ስለሚፈልጉት የህክምና ድጋፍ ወይም ጥያቄ በዝርዝር ይግለጹ...' : 'Briefly describe how we can assist with your consultation, diagnosis, or care planning...'"
+                  required
+                ></textarea>
+              </mat-form-field>
+
+              <button mat-flat-button class="submit-btn" type="submit" [disabled]="submitting()">
+                @if (submitting()) {
+                  <span class="btn-content">
+                    <mat-progress-spinner diameter="18" mode="indeterminate"></mat-progress-spinner>
+                    <span>{{ i18n.isAmharic() ? 'በመላክ ላይ...' : 'Sending Message...' }}</span>
+                  </span>
+                } @else {
+                  <span class="btn-content">
+                    <mat-icon>send</mat-icon>
+                    <span>{{ i18n.isAmharic() ? 'መልዕክቱን ላክ' : 'Send Message' }}</span>
+                  </span>
+                }
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQS ACCORDION -->
+  <section class="faq-section">
+    <div class="content-container">
+      <div class="faq-header">
+        <span class="faq-tag">{{ i18n.isAmharic() ? 'ተደጋግመው የሚጠየቁ ጥያቄዎች' : 'FREQUENTLY ASKED QUESTIONS' }}</span>
+        <h2>{{ i18n.isAmharic() ? 'የተለመዱ ጥያቄዎችና መልሶቻቸው' : 'Got Questions? We Have Answers.' }}</h2>
+      </div>
+
+      <div class="faq-grid">
+        <div class="faq-item">
+          <h4><mat-icon>help_outline</mat-icon> {{ i18n.isAmharic() ? 'ስፔሻሊስቶች በምን ያህል ጊዜ ምላሽ ይሰጣሉ?' : 'How quickly do specialists review cases?' }}</h4>
+          <p>{{ i18n.isAmharic() ? 'እንደመረጡት የምላሽ ደረጃ ይወሰናል፤ በቅድሚያ ደረጃ (Priority) ከ 2 ሰዓት ባነሰ ጊዜ፣ በአስቸኳይ (Expedited) በ 2 ቀናት፣ ወይም በመደበኛ (Standard) በ 5 ቀናት ውስጥ ምላሽ ይሰጣል።' : 'Depending on your chosen turnaround SLA tier, cases are evaluated under 2 hours (Priority), within 2 days (Expedited), or within 5 days (Standard).' }}</p>
+        </div>
+
+        <div class="faq-item">
+          <h4><mat-icon>help_outline</mat-icon> {{ i18n.isAmharic() ? 'ከውጭ ሀገር (ዲያስፖራ) ሆኖ ለቤተሰብ ህክምና ማስተባበር ይቻላል?' : 'Can diaspora patients organize care from abroad?' }}</h4>
+          <p>{{ i18n.isAmharic() ? 'አዎ! መድረካችን በውጭ የሚኖሩ ኢትዮጵያውያን ለወላጆቻቸው ወይም ለቤተሰቦቻቸው የህክምና ምርመራዎችን፣ የሆስፒታል አልጋዎችንና መድኃኒቶችን በቀላሉ እንዲያስተባብሩ የተዘጋጀ ነው።' : 'Yes! Medi-Guide was specifically designed to empower diaspora families to schedule specialist intake, second opinions, and home medical supplies for relatives in Ethiopia.' }}</p>
+        </div>
+
+        <div class="faq-item">
+          <h4><mat-icon>help_outline</mat-icon> {{ i18n.isAmharic() ? 'የባህል ህክምና ባለሙያዎች እንዴት ነው የሚመረጡት?' : 'How are traditional medicine practitioners vetted?' }}</h4>
+          <p>{{ i18n.isAmharic() ? 'በመድረኩ ላይ የሚገኙ ሁሉም ባህላዊ አዋቂዎች በጤና ጥበቃና በኤፍኤምኤችኤሲኤ (FMHACA) የተረጋገጠ ህጋዊ ፈቃድ ያላቸው መሆናቸው አስቀድሞ ይረጋገጣል።' : 'Every indigenous traditional healer must hold verified licensing recognized by the Ethiopian Ministry of Health and FMHACA before intake acceptance.' }}</p>
+        </div>
+
+        <div class="faq-item">
+          <h4><mat-icon>help_outline</mat-icon> {{ i18n.isAmharic() ? 'የህክምና መረጃዬ ሚስጥራዊነት እንዴት ይጠበቃል?' : 'How is patient medical privacy protected?' }}</h4>
+          <p>{{ i18n.isAmharic() ? 'የእርስዎ የጤና መረጃ እና የተሰቀሉ ሰነዶች በሚስጥር የተጠበቁ ሲሆኑ ለተመደበው የጤና ባለሙያ ብቻ እንዲታዩ ተደርገው የተጠበቁ ናቸው።' : 'All medical records, diagnostic scans, and consultations are secured in accordance with healthcare privacy standards and only accessible to assigned clinicians.' }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a routerLink="/" class="brand-capsule footer-brand-lockup">
+            <div class="brand-emblem-badge">
+              <img src="/assets/emblem.png" alt="Medi-Guide Emblem" class="emblem-img" />
+            </div>
+            <div class="brand-text">
+              <span class="brand-title" style="color: #ffffff;">MEDI-GUIDE</span>
+              <span class="brand-sub" style="color: #38bdf8;">ETHIOPIA</span>
+            </div>
+          </a>
+          <p class="brand-desc">
+            {{ i18n.isAmharic()
+              ? 'ለኢትዮጵያውያንና ለዲያስፖራው ማህበረሰብ የተሟላ፣ ገለልተኛ እና አስተማማኝ የጤና ድጋፍና እንክብካቤ ማስተባበሪያ መድረክ።'
+              : 'Independent, patient-centered healthcare navigation platform connecting Ethiopian and diaspora families with verified specialists.' }}
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h4>{{ i18n.isAmharic() ? 'አገልግሎቶች' : 'Navigation' }}</h4>
+          <a routerLink="/about">{{ i18n.t('nav.about') }}</a>
+          <a routerLink="/" fragment="services">{{ i18n.t('nav.services') }}</a>
+          <a routerLink="/" fragment="how-it-works">{{ i18n.t('nav.howItWorks') }}</a>
+          <a routerLink="/contact">{{ i18n.t('nav.contact') }}</a>
+        </div>
+
+        <div class="footer-links">
+          <h4>{{ i18n.isAmharic() ? 'የታካሚ ፖርታል' : 'Patient Portal' }}</h4>
+          <a routerLink="/login">{{ i18n.t('nav.signIn') }}</a>
+          <a routerLink="/register">{{ i18n.t('nav.register') }}</a>
+          @if (isLoggedIn()) {
+            <a [routerLink]="getDashboardLink()">{{ i18n.t('nav.dashboard') }}</a>
+          }
+        </div>
+
+        <div class="footer-ethics">
+          <h4>{{ i18n.isAmharic() ? 'ህጋዊና ስነ-ምግባራዊ ተገዢነት' : 'Ethics & Compliance' }}</h4>
+          <p>
+            {{ i18n.isAmharic()
+              ? 'የታካሚዎች መረጃ በኢትዮጵያ የጤና እና የውሂብ ጥበቃ ደንቦች መሰረት በጥብቅ ሚስጥር የተጠበቀ ነው። ሜዲ-ጋይድ ገለልተኛ የምክክር እና የቅንጅት አገልግሎት ብቻ ይሰጣል።'
+              : 'Operates in accordance with Ethiopian Ministry of Health and FMHACA regulatory frameworks. Medi-Guide provides independent medical navigation and coordination.' }}
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 Medi-Guide Ethiopia. All Rights Reserved.</span>
+        <span>Confidential Healthcare Navigation Platform</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="mobile-bottom-bar" aria-label="Mobile Navigation">
+    <a routerLink="/">
+      <mat-icon>home</mat-icon>
+      <span>{{ i18n.t('nav.home') }}</span>
+    </a>
+    <a routerLink="/about">
+      <mat-icon>info</mat-icon>
+      <span>{{ i18n.t('nav.about') }}</span>
+    </a>
+    <a routerLink="/" fragment="services">
+      <mat-icon>medical_services</mat-icon>
+      <span>{{ i18n.t('nav.services') }}</span>
+    </a>
+    <a routerLink="/" fragment="how-it-works">
+      <mat-icon>checklist</mat-icon>
+      <span>{{ i18n.t('nav.howItWorks') }}</span>
+    </a>
+    <a routerLink="/contact" class="active">
+      <mat-icon>contact_support</mat-icon>
+      <span>{{ i18n.t('nav.contact') }}</span>
+    </a>
+  </nav>
+</div>

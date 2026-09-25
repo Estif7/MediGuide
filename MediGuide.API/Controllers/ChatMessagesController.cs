@@ -56,12 +56,26 @@ public class ChatMessagesController : ControllerBase
             messagesQuery = messagesQuery.Where(m => m.CreatedAt < query.Before.Value);
 
         // Fetch newest-first, one extra to detect "more older messages exist"
-        var fetched = await messagesQuery
+        var rawList = await messagesQuery
             .OrderByDescending(m => m.CreatedAt)
             .Take(pageSize + 1)
-            .Select(m => new ChatMessageDto(
-                m.Id, m.BookingId, m.SenderId, m.SenderRole, m.Content, m.IsRead, m.CreatedAt))
             .ToListAsync();
+
+        var senderIds = rawList.Select(m => m.SenderId).Distinct().ToList();
+        var userNames = await _context.Users
+            .Where(u => senderIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.FullName);
+
+        var fetched = rawList.Select(m => new ChatMessageDto(
+            m.Id,
+            m.BookingId,
+            m.SenderId,
+            m.SenderRole,
+            m.Content,
+            m.IsRead,
+            m.CreatedAt,
+            userNames.GetValueOrDefault(m.SenderId)
+        )).ToList();
 
         var hasMore = fetched.Count > pageSize;
         var page = fetched.Take(pageSize).OrderBy(m => m.CreatedAt).ToList(); // ascending for display
@@ -73,7 +87,9 @@ public class ChatMessagesController : ControllerBase
     [HttpPost("booking/{bookingId:guid}")]
     public async Task<ActionResult<ChatMessageDto>> Send(Guid bookingId, CreateChatMessageDto dto)
     {
-        var booking = await _context.Bookings.FindAsync(bookingId);
+        var booking = await _context.Bookings
+            .Include(b => b.Agent)
+            .FirstOrDefaultAsync(b => b.Id == bookingId);
         if (booking is null)
             return NotFound("Booking not found.");
 
@@ -101,6 +117,9 @@ public class ChatMessagesController : ControllerBase
         _context.ChatMessages.Add(message);
         await _context.SaveChangesAsync();
 
+        var senderUser = await _context.Users.FindAsync(userId);
+        var senderDisplayName = senderUser?.FullName ?? (role == "Agent" ? (booking.Agent?.FullName ?? "Healthcare Professional") : role);
+
         var result = new ChatMessageDto(
             message.Id,
             message.BookingId,
@@ -108,7 +127,8 @@ public class ChatMessagesController : ControllerBase
             message.SenderRole,
             message.Content,
             message.IsRead,
-            message.CreatedAt);
+            message.CreatedAt,
+            senderDisplayName);
 
         await _hubContext.Clients.Group(BookingHub.GroupName(bookingId))
             .SendAsync("ReceiveMessage", result);

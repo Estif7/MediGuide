@@ -1,0 +1,343 @@
+<div class="page users-page">
+
+  <!-- HEADER -->
+  <div class="hero-title-row">
+    <div>
+      <h1>{{ i18n.t('users.title') }}</h1>
+      <p>{{ i18n.t('users.subtitle') }}</p>
+    </div>
+
+    <div class="actions">
+      <button
+        mat-flat-button
+        color="primary"
+        class="add-user-btn"
+        (click)="openAddModal()"
+      >
+        <mat-icon>person_add</mat-icon>
+        <span>{{ i18n.t('users.addUser') }}</span>
+      </button>
+    </div>
+  </div>
+
+  @if (successMsg()) {
+    <div class="message success-alert">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMsg() }}</span>
+    </div>
+  }
+
+  @if (errorMsg()) {
+    <div class="message error-alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMsg() }}</span>
+    </div>
+  }
+
+  <!-- SEARCH & FILTER BAR -->
+  <mat-card class="filter-card">
+    <mat-card-content>
+      <div class="filter-row">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>{{ i18n.t('users.searchPlaceholder') }}</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input
+            matInput
+            [value]="search()"
+            (input)="onSearch($any($event.target).value)"
+            placeholder="Abebe, user@example.com..."
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="role-select">
+          <mat-label>{{ i18n.t('users.filterRole') }}</mat-label>
+          <mat-select [value]="roleFilter()" (selectionChange)="onRoleFilter($event.value)">
+            <mat-option value="">{{ i18n.t('users.allRoles') }}</mat-option>
+            <mat-option value="Patient">{{ i18n.t('role.patient') }}</mat-option>
+            <mat-option value="Agent">{{ i18n.t('role.agent') }}</mat-option>
+            <mat-option value="Admin">{{ i18n.t('role.admin') }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- USERS LIST -->
+  <mat-card class="list-card">
+    <mat-card-header>
+      <mat-card-title>
+        <span>{{ i18n.isAmharic() ? 'የተጠቃሚዎች ዝርዝር' : 'All Users' }} ({{ totalCount() }})</span>
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading-state">
+          <mat-progress-spinner diameter="36" mode="indeterminate"></mat-progress-spinner>
+          <span>{{ i18n.t('common.loading') }}</span>
+        </div>
+      } @else {
+        <div class="users-table-container">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>{{ i18n.t('users.colName') }}</th>
+                <th>{{ i18n.t('users.colRole') }}</th>
+                <th>{{ i18n.t('users.colPhone') }}</th>
+                <th>{{ i18n.t('users.colStatus') }}</th>
+                <th>{{ i18n.t('users.colJoined') }}</th>
+                <th class="actions-col">{{ i18n.t('users.colActions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (u of users(); track u.id) {
+                <tr [class.deactivated]="!u.isActive">
+                  <td>
+                    <div class="user-cell">
+                      <div class="user-avatar-sm">
+                        {{ u.fullName.charAt(0).toUpperCase() }}
+                      </div>
+                      <div class="user-details">
+                        <strong>{{ u.fullName }}</strong>
+                        <small>{{ u.email }}</small>
+                        @if (u.department || u.specialty) {
+                          <span style="font-size: 11px; color: #087f8c; font-weight: 600; display: block; margin-top: 2px;">
+                            {{ u.title ? u.title + ' • ' : '' }}{{ u.department }}{{ u.specialty ? ' (' + u.specialty + ')' : '' }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="role-chips">
+                      @for (role of u.roles; track role) {
+                        <span class="role-chip" [class.admin]="role === 'Admin'" [class.agent]="role === 'Agent'" [class.patient]="role === 'Patient'">
+                          {{ role === 'Admin' ? i18n.t('role.admin') : role === 'Agent' ? i18n.t('role.agent') : i18n.t('role.patient') }}
+                        </span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span class="phone-text">{{ u.phoneNumber || '—' }}</span>
+                  </td>
+                  <td>
+                    <span class="status-chip" [class.active]="u.isActive" [class.locked]="!u.isActive">
+                      <mat-icon>{{ u.isActive ? 'check_circle' : 'block' }}</mat-icon>
+                      {{ u.isActive ? i18n.t('users.active') : i18n.t('users.locked') }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="date-text">{{ u.createdAt | date: 'mediumDate' }}</span>
+                  </td>
+                  <td class="actions-col">
+                    <button
+                      mat-icon-button
+                      (click)="openEditModal(u)"
+                      [matTooltip]="i18n.t('users.edit')"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+
+                    <button
+                      mat-icon-button
+                      [color]="u.isActive ? 'warn' : 'primary'"
+                      (click)="toggleActive(u)"
+                      [disabled]="u.isActive && isLastActiveAdmin(u)"
+                      [matTooltip]="(u.isActive && isLastActiveAdmin(u)) ? (i18n.isAmharic() ? 'የመጨረሻው ንቁ አስተዳዳሪ ሊታገድ አይችልም' : 'Cannot deactivate the only active Administrator') : (u.isActive ? i18n.t('users.deactivate') : i18n.t('users.activate'))"
+                    >
+                      <mat-icon>{{ u.isActive ? 'block' : 'check_circle_outline' }}</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="empty-row">
+                    <mat-icon>person_off</mat-icon>
+                    <p>{{ i18n.isAmharic() ? 'ምንም ተጠቃሚ አልተገኘም።' : 'No users match the search criteria.' }}</p>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ADD USER MODAL -->
+  @if (showAddModal()) {
+    <div class="modal-backdrop" (click)="closeAddModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ i18n.t('users.createUserModal') }}</h3>
+          <button mat-icon-button (click)="closeAddModal()"><mat-icon>close</mat-icon></button>
+        </div>
+
+        <form [formGroup]="addForm" (ngSubmit)="submitAdd()">
+          <div class="modal-body">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.t('auth.fullName') }}</mat-label>
+              <mat-icon matPrefix>person</mat-icon>
+              <input matInput formControlName="fullName" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.t('auth.email') }}</mat-label>
+              <mat-icon matPrefix>email</mat-icon>
+              <input matInput type="email" formControlName="email" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.t('auth.password') }}</mat-label>
+              <mat-icon matPrefix>lock</mat-icon>
+              <input matInput type="password" formControlName="password" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.t('auth.phone') }}</mat-label>
+              <mat-icon matPrefix>phone</mat-icon>
+              <input matInput formControlName="phoneNumber" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.t('users.colRole') }}</mat-label>
+              <mat-select formControlName="role">
+                <mat-option value="Patient">{{ i18n.t('role.patient') }}</mat-option>
+                <mat-option value="Agent">{{ i18n.t('role.agent') }}</mat-option>
+                <mat-option value="Admin">{{ i18n.t('role.admin') }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            @if (addForm.get('role')?.value === 'Agent') {
+              <mat-form-field appearance="outline">
+                <mat-label>{{ i18n.isAmharic() ? 'የሙያ ማዕረግ (Title)' : 'Professional Title' }}</mat-label>
+                <mat-icon matPrefix>badge</mat-icon>
+                <input matInput formControlName="title" placeholder="MD, Consultant Pediatrician" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>{{ i18n.isAmharic() ? 'የህክምና ክፍል / Department' : 'Medical Department' }}</mat-label>
+                <mat-select formControlName="department">
+                  <mat-option value="General Practice">{{ i18n.isAmharic() ? 'አጠቃላይ ህክምና (General Practice)' : 'General Practice' }}</mat-option>
+                  <mat-option value="Pediatrics">{{ i18n.isAmharic() ? 'የህፃናት ህክምና (Pediatrics)' : 'Pediatrics' }}</mat-option>
+                  <mat-option value="Mental Health">{{ i18n.isAmharic() ? 'የአእምሮ ጤና (Mental Health)' : 'Mental Health' }}</mat-option>
+                  <mat-option value="Cardiology">{{ i18n.isAmharic() ? 'የልብ ህክምና (Cardiology)' : 'Cardiology' }}</mat-option>
+                  <mat-option value="Dermatology">{{ i18n.isAmharic() ? 'የቆዳ ህክምና (Dermatology)' : 'Dermatology' }}</mat-option>
+                  <mat-option value="Obstetrics & Gynecology">{{ i18n.isAmharic() ? 'የማህፀንና ፅንስ ህክምና (OB/GYN)' : 'Obstetrics & Gynecology' }}</mat-option>
+                  <mat-option value="Nutrition & Diet">{{ i18n.isAmharic() ? 'ስነ-ምግብ (Nutrition)' : 'Nutrition & Diet' }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>{{ i18n.isAmharic() ? 'ልዩ የሙያ ዘርፍ (Specialty)' : 'Specialty Area' }}</mat-label>
+                <mat-icon matPrefix>medical_services</mat-icon>
+                <input matInput formControlName="specialty" placeholder="Child Health & Neonatology" />
+              </mat-form-field>
+            }
+          </div>
+
+          <div class="modal-footer">
+            <button mat-button type="button" (click)="closeAddModal()">{{ i18n.t('common.cancel') }}</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="actionLoading() || addForm.invalid">
+              @if (actionLoading()) {
+                <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+              } @else {
+                <span>{{ i18n.t('common.submit') }}</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- EDIT USER MODAL -->
+  @if (showEditModal()) {
+    <div class="modal-backdrop" (click)="closeEditModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ i18n.t('users.editUserModal') }}</h3>
+          <button mat-icon-button (click)="closeEditModal()"><mat-icon>close</mat-icon></button>
+        </div>
+
+        <form [formGroup]="editForm" (ngSubmit)="submitEdit()">
+          <div class="modal-body">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.t('auth.fullName') }}</mat-label>
+              <mat-icon matPrefix>person</mat-icon>
+              <input matInput formControlName="fullName" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.t('auth.phone') }}</mat-label>
+              <mat-icon matPrefix>phone</mat-icon>
+              <input matInput formControlName="phoneNumber" />
+            </mat-form-field>
+
+            <div class="permanent-role-badge">
+              <mat-icon style="color: var(--app-primary);">verified_user</mat-icon>
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                  <strong style="font-size: 13px;">{{ i18n.t('users.colRole') }}:</strong>
+                  <span class="role-chip" [class.admin]="editingUser()?.roles?.includes('Admin')" [class.agent]="editingUser()?.roles?.includes('Agent')" [class.patient]="editingUser()?.roles?.includes('Patient')">
+                    {{ editingUser()?.roles?.includes('Admin') ? i18n.t('role.admin') : editingUser()?.roles?.includes('Agent') ? i18n.t('role.agent') : i18n.t('role.patient') }}
+                  </span>
+                </div>
+                <span class="role-lock-text">
+                  {{ i18n.isAmharic() ? 'የተጠቃሚ ሚና በቋሚነት የተመደበ ሲሆን ሊቀየር አይችልም።' : 'Role is permanent and cannot be modified once created.' }}
+                </span>
+              </div>
+            </div>
+
+            @if (editingUser()?.roles?.includes('Agent')) {
+              <mat-form-field appearance="outline">
+                <mat-label>{{ i18n.isAmharic() ? 'የሙያ ማዕረግ (Title)' : 'Professional Title' }}</mat-label>
+                <mat-icon matPrefix>badge</mat-icon>
+                <input matInput formControlName="title" placeholder="MD, Consultant Pediatrician" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>{{ i18n.isAmharic() ? 'የህክምና ክፍል / Department' : 'Medical Department' }}</mat-label>
+                <mat-select formControlName="department">
+                  <mat-option value="General Practice">{{ i18n.isAmharic() ? 'አጠቃላይ ህክምና (General Practice)' : 'General Practice' }}</mat-option>
+                  <mat-option value="Pediatrics">{{ i18n.isAmharic() ? 'የህፃናት ህክምና (Pediatrics)' : 'Pediatrics' }}</mat-option>
+                  <mat-option value="Mental Health">{{ i18n.isAmharic() ? 'የአእምሮ ጤና (Mental Health)' : 'Mental Health' }}</mat-option>
+                  <mat-option value="Cardiology">{{ i18n.isAmharic() ? 'የልብ ህክምና (Cardiology)' : 'Cardiology' }}</mat-option>
+                  <mat-option value="Dermatology">{{ i18n.isAmharic() ? 'የቆዳ ህክምና (Dermatology)' : 'Dermatology' }}</mat-option>
+                  <mat-option value="Obstetrics & Gynecology">{{ i18n.isAmharic() ? 'የማህፀንና ፅንስ ህክምና (OB/GYN)' : 'Obstetrics & Gynecology' }}</mat-option>
+                  <mat-option value="Nutrition & Diet">{{ i18n.isAmharic() ? 'ስነ-ምግብ (Nutrition)' : 'Nutrition & Diet' }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>{{ i18n.isAmharic() ? 'ልዩ የሙያ ዘርፍ (Specialty)' : 'Specialty Area' }}</mat-label>
+                <mat-icon matPrefix>medical_services</mat-icon>
+                <input matInput formControlName="specialty" placeholder="Child Health & Neonatology" />
+              </mat-form-field>
+            }
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.t('users.colStatus') }}</mat-label>
+              <mat-select formControlName="isActive">
+                <mat-option [value]="true">{{ i18n.t('users.active') }}</mat-option>
+                <mat-option [value]="false">{{ i18n.t('users.locked') }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="modal-footer">
+            <button mat-button type="button" (click)="closeEditModal()">{{ i18n.t('common.cancel') }}</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="actionLoading() || editForm.invalid">
+              @if (actionLoading()) {
+                <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+              } @else {
+                <span>{{ i18n.t('common.save') }}</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

@@ -1,130 +1,1104 @@
-<div class="page">
-  @if (message()) {
-    <div class="message">{{ message() }}</div>
-  }
+<div class="booking-page">
 
-  <app-state-panel
-    [loading]="bookingLoading()"
-    [error]="bookingError()"
-    [empty]="false"
-    [retry]="loadBooking.bind(this)"
-  >
-    @if (booking(); as b) {
-      <header>
-        <h1>{{ b.categoryName }}</h1>
-        <p>{{ statusLabel(b.status) }} · {{ b.amount }} ETB</p>
-        <p>Response: {{ timeLabel(b.responseTime) }}</p>
-        @if (b.agentName) {
-          <p>Agent: {{ b.agentName }}</p>
-        }
-        @if (b.notes) {
-          <p>Notes: {{ b.notes }}</p>
-        }
-      </header>
+  <!-- =========================
+       TOP HEADER
+  ========================== -->
 
-      @if (isAdmin()) {
-        <mat-form-field appearance="outline">
-          <mat-label>Booking status</mat-label>
-          <mat-select [value]="b.status" (selectionChange)="updateStatus($event.value)">
-            @for (s of allowedStatuses; track s) {
-              <mat-option [value]="s">{{ statusLabel(s) }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      }
-    }
-  </app-state-panel>
+  <header class="booking-header">
 
-  @if (isAdmin() || isAgent()) {
-    <section class="assign">
-      <h3>Assign Agent</h3>
-      <select [ngModel]="selectedAgentId()" (ngModelChange)="selectedAgentId.set($event)">
-        <option value="">-- Select agent --</option>
-        @for (a of agents(); track a.id) {
-          <option [value]="a.id">{{ a.fullName }}</option>
-        }
-      </select>
-      <button type="button" (click)="assignAgent()" [disabled]="loading()">
-        Assign
+    <div class="header-left">
+
+      <button class="back-button" type="button" (click)="goBack()" [attr.aria-label]="i18n.t('common.back')">
+        <mat-icon>arrow_back</mat-icon>
       </button>
-    </section>
+
+      <div class="header-title">
+        <span class="eyebrow">BOOKING DETAILS</span>
+
+        @if (booking(); as b) {
+          <h1>{{ b.categoryName }}</h1>
+          <p>
+            Healthcare support request
+            <span class="separator">•</span>
+            {{ b.amount }} ETB
+          </p>
+        } @else {
+          <h1>Booking Details</h1>
+          <p>Loading booking information...</p>
+        }
+      </div>
+
+    </div>
+
+
+    @if (booking(); as b) {
+      <div class="header-status">
+
+        <span
+          class="status-badge"
+          [attr.data-status]="b.status"
+        >
+          <span class="status-dot"></span>
+          {{ statusLabel(b.status) }}
+        </span>
+
+      </div>
+    }
+
+  </header>
+
+
+  <!-- =========================
+       MESSAGE
+  ========================== -->
+
+  @if (message()) {
+    <div class="message">
+      <mat-icon>info_outline</mat-icon>
+      <span>{{ message() }}</span>
+    </div>
   }
 
-  <mat-card appearance="outlined" class="chat-card">
-    <mat-card-header>
-      <mat-card-title>Chat</mat-card-title>
-    </mat-card-header>
 
-    <mat-card-content class="chat-content">
-      <app-state-panel
-        [loading]="messagesLoading()"
-        [error]="messagesError()"
-        [empty]="messages().length === 0"
-        emptyMessage="No messages yet. Say hello 👋"
-        emptyIcon="chat_bubble_outline"
-        [retry]="loadMessages.bind(this)"
-      >
-        <div class="chat-scroll" #chatScroll (scroll)="onChatScroll($event)">
-          @if (loadingMore()) {
-            <div class="loading-more">
-              <mat-progress-spinner diameter="20" mode="indeterminate" />
-            </div>
-          }
+  <!-- =========================
+       MAIN CONTENT
+  ========================== -->
 
-          @for (m of messages(); track m.id) {
-            <div class="chat-row" [class.mine]="isMine(m)">
-              <div class="chat-avatar" [class.mine]="isMine(m)">{{ initials(m.senderRole) }}</div>
-              <div class="chat-bubble" [class.mine]="isMine(m)">
-                <div class="chat-meta">
-                  <span class="chat-sender">{{ m.senderRole }}</span>
-                  <span class="chat-time">{{ m.createdAt | date: 'short' }}</span>
+  <main class="booking-content">
+
+    <app-state-panel
+      [loading]="bookingLoading()"
+      [error]="bookingError()"
+      [empty]="false"
+      [retry]="loadBooking.bind(this)"
+    >
+
+      @if (booking(); as b) {
+
+        <div class="booking-layout">
+
+
+          <!-- =========================
+               LEFT / MAIN COLUMN
+          ========================== -->
+
+          <div class="main-column">
+
+            <!-- Clinical Referral Pending Admin Approval Banner -->
+            @if (b.isReferralPendingApproval) {
+              <section class="overview-card referral-pending-banner" style="border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.08); margin-bottom: 18px;">
+                <div class="section-header" style="background: rgba(245, 158, 11, 0.15); border-bottom: 1px solid rgba(245, 158, 11, 0.25); display: flex; justify-content: space-between; align-items: center;">
+                  <div class="section-title">
+                    <div class="section-icon" style="background: #d97706; color: white;">
+                      <mat-icon>forward</mat-icon>
+                    </div>
+                    <div>
+                      <span class="section-label" style="color: #d97706; font-weight: 800;">
+                        {{ i18n.isAmharic() ? 'የአስተዳዳሪ ማረጋገጫ በመጠበቅ ላይ • ክሊኒካል ሪፈራል' : 'ADMIN APPROVAL REQUIRED • CLINICAL REFERRAL' }}
+                      </span>
+                      <h2 style="margin: 0; font-size: 18px; color: var(--app-text);">
+                        {{ i18n.isAmharic() ? 'የታካሚ ሪፈራል ማስተላለፊያ ማረጋገጫ' : 'Referral Transfer Pending Approval' }}
+                      </h2>
+                    </div>
+                  </div>
+                  <span class="status-badge" style="background: #d97706; color: white; font-size: 12px; font-weight: 700;">
+                    <mat-icon style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;">hourglass_top</mat-icon>
+                    {{ i18n.isAmharic() ? 'በግምገማ ላይ' : 'Under Review' }}
+                  </span>
                 </div>
-                <div class="chat-text">{{ m.content }}</div>
+
+                <div style="padding: 20px;">
+                  <p style="margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: var(--app-text);">
+                    <strong>{{ i18n.isAmharic() ? 'ተረካቢ ስፔሻሊስት:' : 'Proposed Specialist:' }}</strong> Dr. {{ b.referredToAgentName || 'Specialist' }}<br/>
+                    <strong>{{ i18n.isAmharic() ? 'የሪፈራል ምክንያት:' : 'Referral Reason:' }}</strong> {{ b.referralReason || 'Specialist clinical care' }}
+                  </p>
+
+                  @if (b.referralClinicalNotes) {
+                    <div style="background: var(--app-surface); border: 1px solid var(--app-border); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 12px; color: var(--app-text);">
+                      <strong style="color: #d97706; display: block; margin-bottom: 4px;">
+                        <mat-icon style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;">lock</mat-icon>
+                        {{ i18n.isAmharic() ? 'ሚስጥራዊ የክሊኒካል ርክክብ ማስታወሻ:' : 'Confidential Handover Notes:' }}
+                      </strong>
+                      <span style="white-space: pre-wrap;">{{ b.referralClinicalNotes }}</span>
+                    </div>
+                  }
+
+                  @if (isAdmin()) {
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 14px;">
+                      <button
+                        mat-flat-button
+                        style="background: #10b981; color: white; font-weight: 700;"
+                        type="button"
+                        (click)="approveReferral()"
+                        [disabled]="approvingReferral() || rejectingReferral()"
+                      >
+                        <mat-icon [class.spin-icon]="approvingReferral()">{{ approvingReferral() ? 'sync' : 'check_circle' }}</mat-icon>
+                        <span>{{ approvingReferral() ? (i18n.isAmharic() ? 'በማጽደቅ ላይ...' : 'Approving...') : (i18n.isAmharic() ? 'ሪፈራሉን አጽድቅ (Approve Transfer)' : 'Approve Referral Transfer') }}</span>
+                      </button>
+
+                      <button
+                        mat-stroked-button
+                        color="warn"
+                        type="button"
+                        (click)="openRejectDialog()"
+                        [disabled]="approvingReferral() || rejectingReferral()"
+                      >
+                        <mat-icon>cancel</mat-icon>
+                        <span>{{ i18n.isAmharic() ? 'ሪፈራሉን ውድቅ አድርግ' : 'Decline Referral' }}</span>
+                      </button>
+                    </div>
+                  } @else {
+                    <div style="display: flex; align-items: center; gap: 8px; color: var(--app-text-muted); font-size: 12px;">
+                      <mat-icon style="font-size: 16px; width: 16px; height: 16px; color: #d97706;">lock_clock</mat-icon>
+                      <span>{{ i18n.isAmharic() ? 'የአስተዳዳሪ ውሳኔ እስኪሰጥ ድረስ ምክክሩ ተቆልፏል።' : 'Consultation actions are temporarily paused awaiting administrative approval.' }}</span>
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+
+
+            <!-- Pending Payment Step Card -->
+            @if (b.status === 0) {
+              <section class="overview-card" style="border: 2px solid #0284c7; background: rgba(2, 132, 199, 0.05); margin-bottom: 18px;">
+                <div class="section-header" style="background: rgba(2, 132, 199, 0.1); border-bottom: 1px solid rgba(2, 132, 199, 0.2); display: flex; justify-content: space-between; align-items: center;">
+                  <div class="section-title">
+                    <div class="section-icon" style="background: #0284c7; color: white;">
+                      <mat-icon>payment</mat-icon>
+                    </div>
+                    <div>
+                      <span class="section-label" style="color: #0284c7; font-weight: 800;">
+                        {{ i18n.isAmharic() ? 'ደረጃ 1 • ክፍያ ያስፈልጋል' : 'STEP 1 • PAYMENT REQUIRED' }}
+                      </span>
+                      <h2 style="margin: 0; font-size: 18px;">
+                        {{ i18n.isAmharic() ? 'የምክክር አገልግሎት ክፍያ ማጠናቀቂያ' : 'Consultation Payment Required' }}
+                      </h2>
+                    </div>
+                  </div>
+                  <span class="status-badge" style="background: #0284c7; color: white; font-size: 13px;">
+                    {{ b.amount }} ETB
+                  </span>
+                </div>
+
+                <div style="padding: 20px;">
+                  <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: var(--app-text);">
+                    {{ i18n.isAmharic()
+                      ? 'ይህ የምክክር ጥያቄ በክሊኒካል አስተዳዳሪ ባለሙያ እንዲመደብለትና የህክምና ክትትል እንዲጀመር እባክዎ ክፍያውን ያረጋግጡ።'
+                      : 'To initiate clinical triage and assign a qualified specialist to your consultation, please confirm your payment.' }}
+                  </p>
+
+                  <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      type="button"
+                      (click)="showPaymentDialog.set(true)"
+                      style="padding: 8px 24px; font-weight: 700;"
+                    >
+                      <mat-icon>account_balance_wallet</mat-icon>
+                      {{ i18n.isAmharic() ? 'ክፍያ ፈጽም (የሙከራ / Simulation)' : 'Proceed to Payment (Simulation)' }}
+                    </button>
+                    <span style="font-size: 11px; color: var(--app-text-muted);">
+                      {{ i18n.isAmharic() ? 'የሚደገፉ: ቴሌብር፣ የኢትዮጵያ ንግድ ባንክ (CBE Birr)፣ ቻፓ' : 'Supported: Telebirr, CBE Birr, Chapa Test' }}
+                    </span>
+                  </div>
+                </div>
+              </section>
+            }
+
+            <!-- Booking overview -->
+            <section class="overview-card">
+
+              <div class="section-header">
+
+                <div class="section-title">
+
+                  <div class="section-icon">
+                    <mat-icon>medical_services</mat-icon>
+                  </div>
+
+                  <div>
+                    <span class="section-label">REQUEST OVERVIEW</span>
+                    <h2>Healthcare Request</h2>
+                  </div>
+
+                </div>
+
+              </div>
+
+
+              <div class="overview-grid">
+
+                <div class="info-item">
+                  <span class="info-label">Service</span>
+                  <strong>{{ b.categoryName }}</strong>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Request Amount</span>
+                  <strong>{{ b.amount }} ETB</strong>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">Expected Response</span>
+                  <strong>{{ timeLabel(b.responseTime) }}</strong>
+                </div>
+
+                <div class="info-item">
+                  <span class="info-label">{{ i18n.isAmharic() ? 'የተመደበ የጤና ባለሙያ' : 'Assigned Healthcare Professional' }}</span>
+
+                  @if (b.agentName) {
+                    <strong class="agent-value">
+                      <mat-icon>medical_services</mat-icon>
+                      {{ b.agentName }}
+                    </strong>
+                  } @else {
+                    <strong class="not-assigned">
+                      {{ i18n.isAmharic() ? 'ያልተመደበ' : 'Not assigned' }}
+                    </strong>
+                  }
+
+                </div>
+
+              </div>
+
+
+              @if (b.notes) {
+
+                <div class="notes-box">
+
+                  <div class="notes-icon">
+                    <mat-icon>notes</mat-icon>
+                  </div>
+
+                  <div>
+                    <span class="info-label">PATIENT NOTES</span>
+                    <p>{{ b.notes }}</p>
+                  </div>
+
+                </div>
+
+              }
+
+            </section>
+
+
+            <!-- Admin status -->
+
+            @if (isAdmin()) {
+
+              <section class="control-card">
+
+                <div class="control-heading">
+
+                  <div>
+                    <span class="section-label">ADMINISTRATION</span>
+                    <h3>Booking Status</h3>
+                    <p>Update the current state of this request.</p>
+                  </div>
+
+                  <mat-icon>tune</mat-icon>
+
+                </div>
+
+                <mat-form-field appearance="outline" class="status-select">
+
+                  <mat-label>Current status</mat-label>
+
+                  <mat-select
+                    [value]="b.status"
+                    (selectionChange)="updateStatus($event.value)"
+                  >
+
+                    @for (s of allowedStatuses; track s) {
+                      <mat-option [value]="s">
+                        {{ statusLabel(s) }}
+                      </mat-option>
+                    }
+
+                  </mat-select>
+
+                </mat-form-field>
+
+              </section>
+
+            }
+
+
+            <!-- =========================
+                 CHAT
+            ========================== -->
+
+            <section class="chat-card">
+
+              <div class="chat-header">
+
+                <div class="chat-title">
+
+                  <div class="chat-icon">
+                    <mat-icon>chat</mat-icon>
+                  </div>
+
+                  <div>
+                    <h2>Conversation</h2>
+                    <p>Communicate securely about this request.</p>
+                  </div>
+
+                </div>
+
+                <div class="secure-chat">
+                  <mat-icon>lock</mat-icon>
+                  Secure
+                </div>
+
+              </div>
+
+
+              <div class="chat-content">
+
+                <app-state-panel
+                  [loading]="messagesLoading()"
+                  [error]="messagesError()"
+                  [empty]="messages().length === 0"
+                  emptyMessage="No messages yet. Say hello 👋"
+                  emptyIcon="chat_bubble_outline"
+                  [retry]="loadMessages.bind(this)"
+                >
+
+                  <div
+                    class="chat-scroll"
+                    #chatScroll
+                    (scroll)="onChatScroll($event)"
+                  >
+
+                    @if (loadingMore()) {
+
+                      <div class="loading-more">
+                        <mat-progress-spinner
+                          diameter="20"
+                          mode="indeterminate"
+                        />
+                      </div>
+
+                    }
+
+
+                    @for (m of messages(); track m.id) {
+                      <div
+                        class="chat-row"
+                        [class.mine]="isMine(m)"
+                        [class.is-doctor]="isHealthcareProfessional(m)"
+                      >
+                        <div
+                          class="chat-avatar"
+                          [class.mine]="isMine(m)"
+                          [class.doctor-avatar]="isHealthcareProfessional(m)"
+                        >
+                          @if (isHealthcareProfessional(m) && !isMine(m)) {
+                            <mat-icon class="avatar-doc-icon">medical_services</mat-icon>
+                          } @else {
+                            {{ getSenderInitials(m) }}
+                          }
+                        </div>
+
+                        <div
+                          class="chat-bubble"
+                          [class.mine]="isMine(m)"
+                          [class.doctor-bubble]="isHealthcareProfessional(m) && !isMine(m)"
+                        >
+                          <div class="chat-meta">
+                            <span class="chat-sender">
+                              {{ getSenderDisplayName(m) }}
+                              @if (isHealthcareProfessional(m)) {
+                                <mat-icon class="verified-badge">verified</mat-icon>
+                              }
+                            </span>
+
+                            <span class="chat-time">
+                              {{ m.createdAt | date: 'shortTime' }}
+                            </span>
+                          </div>
+
+                          <div class="chat-text">
+                            {{ m.content }}
+                          </div>
+                        </div>
+                      </div>
+                    }
+
+                  </div>
+
+                </app-state-panel>
+
+              </div>
+
+
+              <!-- Message composer -->
+
+              <div class="chat-input-bar">
+
+                <mat-form-field
+                  appearance="outline"
+                  class="chat-input-field"
+                >
+
+                  <mat-label>Message</mat-label>
+
+                  <input
+                    matInput
+                    [ngModel]="newMessage()"
+                    (ngModelChange)="newMessage.set($event)"
+                    (keyup.enter)="sendMessage()"
+                    placeholder="Type your message..."
+                  />
+
+                </mat-form-field>
+
+
+                <button
+                  mat-flat-button
+                  color="primary"
+                  class="send-button"
+                  type="button"
+                  (click)="sendMessage()"
+                  [disabled]="loading() || !newMessage().trim()"
+                >
+
+                  <mat-icon>send</mat-icon>
+
+                  <span>Send</span>
+
+                </button>
+
+              </div>
+
+            </section>
+
+          </div>
+
+
+          <!-- =========================
+               RIGHT SIDEBAR
+          ========================== -->
+
+          <aside class="sidebar">
+
+
+            <!-- People / Assignment -->
+
+            <!-- Agent Case Actions -->
+            @if (isAgent()) {
+              <section class="sidebar-card agent-actions-card">
+                <div class="sidebar-heading">
+                  <div class="sidebar-heading-icon">
+                    <mat-icon>healing</mat-icon>
+                  </div>
+                  <div>
+                    <span class="section-label">{{ i18n.isAmharic() ? 'የባለሙያ እርምጃዎች' : 'HEALTHCARE PROFESSIONAL ACTIONS' }}</span>
+                    <h3>{{ i18n.isAmharic() ? 'የምክክር አስተዳደር' : 'Consultation Control' }}</h3>
+                  </div>
+                </div>
+
+                @if (canAcceptBooking()) {
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      class="full-button"
+                      type="button"
+                      (click)="accept()"
+                      [disabled]="loading()"
+                    >
+                      <mat-icon>check_circle</mat-icon>
+                      {{ i18n.isAmharic() ? 'የተመደበውን ምክክር ተቀበል' : 'Accept Assignment' }}
+                    </button>
+
+                    <button
+                      mat-stroked-button
+                      color="warn"
+                      class="full-button"
+                      type="button"
+                      (click)="decline()"
+                      [disabled]="loading()"
+                    >
+                      <mat-icon>cancel</mat-icon>
+                      {{ i18n.isAmharic() ? 'ምደባውን እምቢ በል' : 'Decline Assignment' }}
+                    </button>
+                  </div>
+                }
+
+                @if (canCompleteBooking()) {
+                  <div style="margin-top: 10px;">
+                    <button
+                      mat-flat-button
+                      style="background: #10b981; color: white;"
+                      class="full-button"
+                      type="button"
+                      (click)="complete()"
+                      [disabled]="loading()"
+                    >
+                      <mat-icon>task_alt</mat-icon>
+                      {{ i18n.isAmharic() ? 'ምክክሩን አጠናቅቅ' : 'Complete Consultation' }}
+                    </button>
+                  </div>
+                }
+
+                @if (canReferBooking()) {
+                  <div style="margin-top: 14px; border-top: 1px dashed var(--app-border); padding-top: 12px;">
+                    <span class="section-label" style="font-size: 11px;">{{ i18n.isAmharic() ? 'ወደ ሌላ ባለሙያ አስተላልፍ' : 'Refer to Specialist' }}</span>
+                    <button
+                      mat-stroked-button
+                      color="accent"
+                      class="full-button"
+                      type="button"
+                      (click)="openReferDialog()"
+                      [disabled]="loading()"
+                      style="margin-top: 8px;"
+                    >
+                      <mat-icon>forward</mat-icon>
+                      {{ i18n.isAmharic() ? 'ክሊኒካል ሪፈራል / አስተላልፍ...' : 'Initiate Clinical Referral...' }}
+                    </button>
+                  </div>
+                }
+              </section>
+            }
+
+            <!-- Admin Assignment & Controls -->
+            @if (isAdmin()) {
+              <section class="sidebar-card">
+                <div class="sidebar-heading">
+                  <div class="sidebar-heading-icon">
+                    <mat-icon>assignment_ind</mat-icon>
+                  </div>
+                  <div>
+                    <span class="section-label">{{ i18n.isAmharic() ? 'የቡድን አስተዳዳሪ' : 'TEAM' }}</span>
+                    <h3>{{ i18n.isAmharic() ? 'የባለሙያ ምደባ' : 'Assignment' }}</h3>
+                  </div>
+                </div>
+
+                <div class="assignment-current">
+                  <div class="assignment-avatar">
+                    <mat-icon>medical_services</mat-icon>
+                  </div>
+                  <div>
+                    @if (b.agentName) {
+                      <strong>{{ b.agentName }}</strong>
+                      <span>{{ i18n.isAmharic() ? 'የተመደበ የጤና ባለሙያ' : 'Assigned Healthcare Professional' }}</span>
+                    } @else {
+                      <strong>{{ i18n.isAmharic() ? 'ያልተመደበ' : 'Unassigned' }}</strong>
+                      <span>{{ b.status === 0 ? (i18n.isAmharic() ? 'ክፍያ በመጠበቅ ላይ' : 'Awaiting payment') : (i18n.isAmharic() ? 'የጤና ባለሙያ በመጠበቅ ላይ' : 'Awaiting a Healthcare Professional') }}</span>
+                    }
+                  </div>
+                </div>
+
+                @if (b.status === 0) {
+                  <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 10px; margin: 12px 0; font-size: 12px; color: #ef4444; display: flex; align-items: center; gap: 8px;">
+                    <mat-icon style="font-size: 18px; width: 18px; height: 18px;">warning</mat-icon>
+                    <span>{{ i18n.isAmharic() ? 'የጤና ባለሙያ ከመመደቡ በፊት ታካሚው ክፍያ መፈጸም አለበት።' : 'Patient payment required before a Healthcare Professional can be assigned.' }}</span>
+                  </div>
+                }
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ i18n.isAmharic() ? 'የጤና ባለሙያ ይምረጡ' : 'Select Healthcare Professional' }}</mat-label>
+                  <mat-select [ngModel]="selectedAgentId()" (ngModelChange)="selectedAgentId.set($event)" [disabled]="!canAdminAssign()">
+                    <mat-option value="">-- {{ i18n.isAmharic() ? 'የጤና ባለሙያ ይምረጡ' : 'Select Healthcare Professional' }} --</mat-option>
+                    @for (a of agents(); track a.id) {
+                      <mat-option [value]="a.id">
+                        {{ a.fullName }} • {{ a.department || 'General Practice' }}{{ a.specialty ? ' (' + a.specialty + ')' : '' }} {{ a.isAvailable ? '• Available' : '• Busy' }}
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <button
+                  mat-flat-button
+                  color="primary"
+                  class="full-button"
+                  type="button"
+                  (click)="assignAgent()"
+                  [disabled]="loading() || !selectedAgentId() || !canAdminAssign()"
+                >
+                  <mat-icon>person_add</mat-icon>
+                  {{ i18n.isAmharic() ? 'የጤና ባለሙያ መድብ' : 'Assign Healthcare Professional' }}
+                </button>
+
+                @if (canCompleteBooking()) {
+                  <button
+                    mat-flat-button
+                    style="background: #10b981; color: white; margin-top: 8px;"
+                    class="full-button"
+                    type="button"
+                    (click)="complete()"
+                    [disabled]="loading()"
+                  >
+                    <mat-icon>task_alt</mat-icon>
+                    {{ i18n.isAmharic() ? 'ምክክሩን አጠናቅቅ' : 'Complete Consultation' }}
+                  </button>
+                }
+              </section>
+            }
+
+
+            <!-- Documents -->
+
+            <section class="sidebar-card documents-card">
+
+              <div class="sidebar-heading">
+
+                <div class="sidebar-heading-icon">
+                  <mat-icon>folder</mat-icon>
+                </div>
+
+                <div>
+                  <span class="section-label">FILES</span>
+                  <h3>Documents</h3>
+                </div>
+
+              </div>
+
+
+              <label class="upload-box">
+
+                <input
+                  type="file"
+                  (change)="onFileSelected($event)"
+                />
+
+                <mat-icon>cloud_upload</mat-icon>
+
+                <strong>Upload document</strong>
+
+                <span>
+                  Attach medical or supporting files
+                </span>
+
+              </label>
+
+
+              <app-state-panel
+                [loading]="documentsLoading()"
+                [error]="documentsError()"
+                [empty]="documents().length === 0"
+                emptyMessage="No documents uploaded."
+                emptyIcon="description"
+                [retry]="loadDocuments.bind(this)"
+              >
+
+                <div class="document-list">
+
+                  @for (d of documents(); track d.id) {
+
+                    <div class="document-item">
+
+                      <div class="document-icon">
+                        <mat-icon>description</mat-icon>
+                      </div>
+
+                      <div class="document-info">
+
+                        <strong>{{ d.fileName }}</strong>
+
+                        <span>
+                          {{ d.uploadedBy }}
+                          ·
+                          {{ d.fileSizeBytes }} bytes
+                        </span>
+
+                      </div>
+
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="downloadDocument(d)"
+                        aria-label="Download document"
+                      >
+                        <mat-icon>download</mat-icon>
+                      </button>
+
+                    </div>
+
+                  }
+
+                </div>
+
+              </app-state-panel>
+
+            </section>
+
+
+            <!-- Internal Clinical Notes (Staff Only) -->
+            @if (isAdmin() || isAgent()) {
+              <section class="sidebar-card internal-notes-card" style="border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.08);">
+                <div class="sidebar-heading">
+                  <div class="sidebar-heading-icon" style="background: rgba(245, 158, 11, 0.2); color: #d97706;">
+                    <mat-icon>lock</mat-icon>
+                  </div>
+                  <div>
+                    <span class="section-label" style="color: #d97706; font-weight: 700;">{{ i18n.isAmharic() ? 'ለባለሙያዎች ብቻ • ሚስጥራዊ' : 'STAFF ONLY • CONFIDENTIAL' }}</span>
+                    <h3 style="color: var(--app-text); font-size: 15px; margin: 0;">{{ i18n.t('booking.tabInternalNotes') }}</h3>
+                  </div>
+                </div>
+
+                <div class="internal-notes-list" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                  @if (internalNotes().length === 0) {
+                    <span style="font-size: 12px; color: var(--app-text-muted); font-style: italic;">{{ i18n.isAmharic() ? 'እስካሁን ምንም ሚስጥራዊ ማስታወሻ የለም።' : 'No internal clinical notes yet.' }}</span>
+                  }
+                  @for (n of internalNotes(); track n.id) {
+                    <div style="background: var(--app-card-bg); border: 1px solid var(--app-border); border-radius: 8px; padding: 10px; font-size: 12px;">
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <strong style="color: #d97706;">{{ n.agentName }}</strong>
+                        <span style="font-size: 10px; color: var(--app-text-muted);">{{ n.createdAt | date:'short' }}</span>
+                      </div>
+                      <p style="margin: 0; color: var(--app-text); white-space: pre-wrap;">{{ n.content }}</p>
+                    </div>
+                  }
+                </div>
+
+                <mat-form-field appearance="outline" class="full-width" style="margin-bottom: 4px;">
+                  <mat-label>{{ i18n.isAmharic() ? 'ማስታወሻ አክል...' : 'Add clinical note...' }}</mat-label>
+                  <textarea matInput [ngModel]="newInternalNote()" (ngModelChange)="newInternalNote.set($event)" rows="2"></textarea>
+                </mat-form-field>
+
+                <button mat-flat-button style="background: #d97706; color: white;" class="full-button" type="button" (click)="saveInternalNote()" [disabled]="savingNote() || !newInternalNote().trim()">
+                  <mat-icon>save</mat-icon>
+                  {{ i18n.isAmharic() ? 'ማስታወሻውን መዝግብ' : 'Save Internal Note' }}
+                </button>
+              </section>
+            }
+
+            <!-- Patient Consultation Review -->
+            @if (isPatient() && b.status === 4) {
+              <section class="sidebar-card review-card" style="border: 2px solid #10b981; background: rgba(16, 185, 129, 0.08);">
+                <div class="sidebar-heading">
+                  <div class="sidebar-heading-icon" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">
+                    <mat-icon>star</mat-icon>
+                  </div>
+                  <div>
+                    <span class="section-label" style="color: #10b981; font-weight: 700;">{{ i18n.isAmharic() ? 'የህክምና ልምድ' : 'CARE EXPERIENCE' }}</span>
+                    <h3 style="color: var(--app-text); font-size: 15px; margin: 0;">{{ i18n.t('booking.reviewExperience') }}</h3>
+                  </div>
+                </div>
+
+                @if (reviewSubmitted()) {
+                  <div style="display: flex; align-items: center; gap: 8px; color: #10b981; padding: 10px; background: var(--app-card-bg); border-radius: 8px; font-size: 13px;">
+                    <mat-icon>check_circle</mat-icon>
+                    <span>{{ i18n.isAmharic() ? 'እናመሰግናለን! አስተያየትዎ ደርሶናል።' : 'Thank you! Your feedback has been received.' }}</span>
+                  </div>
+                } @else {
+                  <div style="display: flex; gap: 4px; margin-bottom: 8px; justify-content: center;">
+                    @for (star of [1,2,3,4,5]; track star) {
+                      <button type="button" mat-icon-button (click)="reviewRating.set(star)" style="color: #f59e0b;">
+                        <mat-icon>{{ star <= reviewRating() ? 'star' : 'star_border' }}</mat-icon>
+                      </button>
+                    }
+                  </div>
+
+                  <mat-form-field appearance="outline" class="full-width" style="margin-bottom: 4px;">
+                    <mat-label>{{ i18n.isAmharic() ? 'አገልግሎቱ እንዴት ነበር?' : 'How was your experience?' }}</mat-label>
+                    <textarea matInput [ngModel]="reviewComment()" (ngModelChange)="reviewComment.set($event)" rows="3" [placeholder]="i18n.isAmharic() ? 'የሐኪሙ ምላሽ፣ ግልጽነትና ድጋፍ...' : 'Doctor responsiveness, clarity, support...'"></textarea>
+                  </mat-form-field>
+
+                  <button mat-flat-button style="background: #10b981; color: white;" class="full-button" type="button" (click)="submitReview()" [disabled]="submittingReview() || !reviewComment().trim()">
+                    <mat-icon>send</mat-icon>
+                    {{ i18n.t('booking.submitReview') }}
+                  </button>
+                }
+              </section>
+            }
+
+            <!-- Security notice -->
+
+            <section class="security-notice">
+
+              <div class="security-icon">
+                <mat-icon>verified_user</mat-icon>
+              </div>
+
+              <div>
+                <strong>{{ i18n.isAmharic() ? 'የታካሚ ሚስጥር ጥበቃ' : 'Patient privacy' }}</strong>
+
+                <p>
+                  {{ i18n.isAmharic() ? 'የታካሚውን የህክምና መረጃ በሚስጥር ይያዙ፤ ለዚህ ጉዳይ ብቻ አስፈላጊ የሆኑ ሰነዶችን ይለዋወጡ።' : 'Keep patient information confidential and only share files relevant to this request.' }}
+                </p>
+              </div>
+
+            </section>
+
+          </aside>
+
+        </div>
+
+      }
+
+    </app-state-panel>
+
+  </main>
+
+  <!-- ==============================================
+       SIMULATED PAYMENT MODAL (DEMO)
+  =============================================== -->
+  @if (showPaymentDialog()) {
+    <div class="modal-backdrop" (click)="showPaymentDialog.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="modal-icon payment-icon">
+              <mat-icon>account_balance_wallet</mat-icon>
+            </div>
+            <div>
+              <h3>{{ i18n.isAmharic() ? 'የክፍያ ማረጋገጫ (Simulation Demo)' : 'Simulate Payment (Demo)' }}</h3>
+              <span class="modal-subtitle">{{ i18n.isAmharic() ? 'የምክክር አገልግሎት ክፍያ በዲሞ ፖርታል ያጠናቅቁ' : 'Complete consultation payment demo for testing' }}</span>
+            </div>
+          </div>
+          <button mat-icon-button type="button" (click)="showPaymentDialog.set(false)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="payment-amount-banner">
+            <span class="amount-label">{{ i18n.isAmharic() ? 'የሚከፈለው ጠቅላላ ሂሳብ' : 'Total Consultation Fee' }}</span>
+            <span class="amount-val">{{ booking()?.amount }} ETB</span>
+          </div>
+
+          <label class="input-section-title">{{ i18n.isAmharic() ? 'የክፍያ ዘዴ ይምረጡ' : 'Select Payment Provider' }}</label>
+          <div class="payment-method-selector">
+            <button
+              type="button"
+              class="payment-option-btn"
+              [class.active]="selectedPaymentMethod() === 'Telebirr'"
+              (click)="selectedPaymentMethod.set('Telebirr')"
+            >
+              <div class="option-radio" [class.checked]="selectedPaymentMethod() === 'Telebirr'"></div>
+              <div class="option-content">
+                <strong>telebirr</strong>
+                <span>Ethio Telecom</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="payment-option-btn"
+              [class.active]="selectedPaymentMethod() === 'CBE Birr'"
+              (click)="selectedPaymentMethod.set('CBE Birr')"
+            >
+              <div class="option-radio" [class.checked]="selectedPaymentMethod() === 'CBE Birr'"></div>
+              <div class="option-content">
+                <strong>CBE Birr</strong>
+                <span>Commercial Bank of Ethiopia</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="payment-option-btn"
+              [class.active]="selectedPaymentMethod() === 'Chapa Test'"
+              (click)="selectedPaymentMethod.set('Chapa Test')"
+            >
+              <div class="option-radio" [class.checked]="selectedPaymentMethod() === 'Chapa Test'"></div>
+              <div class="option-content">
+                <strong>Chapa</strong>
+                <span>Test Cards & Online Gateway</span>
+              </div>
+            </button>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ i18n.isAmharic() ? 'ስልክ ቁጥር / የሂሳብ መለያ' : 'Payer Phone / Account Number' }}</mat-label>
+              <input matInput [ngModel]="paymentPhoneNumber()" (ngModelChange)="paymentPhoneNumber.set($event)" placeholder="0911223344" />
+              <mat-icon matPrefix style="margin-right: 8px;">phone_iphone</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="demo-notice">
+            <mat-icon>info</mat-icon>
+            <span>{{ i18n.isAmharic() ? 'ማስታወሻ: ይህ የማሳያ ክፍያ (Simulation) ሲሆን እውነተኛ የባንክ ሂሳብ አይቆረጥም።' : 'Note: This is a simulation test. No real money will be charged to your account.' }}</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button mat-stroked-button type="button" (click)="showPaymentDialog.set(false)" [disabled]="simulatingPayment()">
+            {{ i18n.isAmharic() ? 'ይቅር' : 'Cancel' }}
+          </button>
+          <button mat-flat-button color="primary" type="button" (click)="simulatePayment()" [disabled]="simulatingPayment()">
+            <mat-icon [class.spin-icon]="simulatingPayment()">{{ simulatingPayment() ? 'sync' : 'verified' }}</mat-icon>
+            <span>{{ simulatingPayment() ? (i18n.isAmharic() ? 'ክፍያ በመረጋገጥ ላይ...' : 'Processing Payment...') : (i18n.isAmharic() ? 'ክፍያውን አረጋግጥ (Simulate Pay)' : 'Confirm Mock Payment') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ==============================================
+       CLINICAL REFERRAL HANDOVER MODAL
+  =============================================== -->
+  @if (showReferDialog()) {
+    <div class="modal-backdrop" (click)="closeReferDialog()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="modal-icon refer-icon">
+              <mat-icon>forward</mat-icon>
+            </div>
+            <div>
+              <h3>{{ i18n.isAmharic() ? 'የክሊኒካል ሪፈራል ማስተላለፊያ' : 'Clinical Referral Handover' }}</h3>
+              <span class="modal-subtitle">{{ i18n.isAmharic() ? 'ይህንን ታካሚ ወደ ሌላ ባለሙያ አስተላልፍ' : 'Hand over this consultation to a specialist' }}</span>
+            </div>
+          </div>
+          <button mat-icon-button type="button" (click)="closeReferDialog()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div style="margin-bottom: 14px;">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ i18n.isAmharic() ? 'የህክምና ክፍል / Medical Department' : 'Medical Department / Field' }}</mat-label>
+              <mat-select [ngModel]="selectedReferralDepartment()" (ngModelChange)="selectedReferralDepartment.set($event)">
+                <mat-option value="all">{{ i18n.isAmharic() ? '🌐 ሁሉም የህክምና ክፍሎች (All Departments)' : '🌐 All Medical Departments' }}</mat-option>
+                @for (dept of referralDepartments(); track dept) {
+                  <mat-option [value]="dept">{{ dept }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ i18n.isAmharic() ? 'ተረካቢ ስፔሻሊስት ይምረጡ' : 'Select Receiving Specialist' }}</mat-label>
+              <mat-select [ngModel]="referTargetAgentId()" (ngModelChange)="referTargetAgentId.set($event)">
+                <mat-option value="">-- {{ i18n.isAmharic() ? 'ስፔሻሊስት ይምረጡ' : 'Select Specialist Doctor' }} --</mat-option>
+                @for (a of filteredReferralAgents(); track a.id) {
+                  <mat-option [value]="a.id">
+                    {{ a.fullName }} • {{ a.department || 'Clinical' }} ({{ a.title || a.specialty || 'Specialist' }})
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          @if (selectedTargetSpecialist(); as spec) {
+            <div class="specialist-preview-card">
+              <div class="specialist-avatar">
+                <mat-icon>medical_services</mat-icon>
+              </div>
+              <div class="specialist-meta">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                  <strong>{{ spec.fullName }}</strong>
+                  <span class="badge-active">{{ spec.isAvailable ? (i18n.isAmharic() ? 'ይገኛሉ' : 'Available') : (i18n.isAmharic() ? 'ስራ ላይ' : 'Busy') }}</span>
+                </div>
+                <span class="specialist-dept">{{ spec.department }} &bull; {{ spec.title || 'Consultant Specialist' }}</span>
+                @if (spec.specialty) {
+                  <span class="specialist-focus">
+                    <mat-icon style="font-size: 13px; width: 13px; height: 13px;">verified</mat-icon>
+                    {{ spec.specialty }}
+                  </span>
+                }
               </div>
             </div>
           }
+
+          <div style="margin-bottom: 14px;">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ i18n.isAmharic() ? 'የሪፈራል ምክንያት' : 'Referral Reason' }}</mat-label>
+              <mat-select [ngModel]="referReasonType()" (ngModelChange)="referReasonType.set($event)">
+                <mat-option value="Specialist Clinical Competence Required">{{ i18n.isAmharic() ? 'ልዩ የህክምና ባለሙያ ድጋፍ ያስፈልጋል' : 'Specialist Clinical Competence Required' }}</mat-option>
+                <mat-option value="Second Medical Opinion">{{ i18n.isAmharic() ? 'ተጨማሪ የባለሙያ አስተያየት (Second Opinion)' : 'Second Medical Opinion' }}</mat-option>
+                <mat-option value="Caseload / Availability Constraint">{{ i18n.isAmharic() ? 'የስራ ጫና / ሌላ አስቸኳይ ስራ' : 'Caseload / Availability Constraint' }}</mat-option>
+                <mat-option value="Subspecialty Diagnostic Review">{{ i18n.isAmharic() ? 'የላቀ ምርመራ ክትትል (Diagnostic Review)' : 'Subspecialty Diagnostic Review' }}</mat-option>
+                <mat-option value="Other Clinical Reason">{{ i18n.isAmharic() ? 'ሌላ ምክንያት' : 'Other Clinical Reason' }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ i18n.isAmharic() ? 'የክሊኒካል ርክክብ ማስታወሻና የታካሚ ታሪክ' : 'Clinical Handover Notes (Confidential)' }}</mat-label>
+              <textarea
+                matInput
+                [ngModel]="referClinicalNotes()"
+                (ngModelChange)="referClinicalNotes.set($event)"
+                rows="4"
+                [placeholder]="i18n.isAmharic() ? 'የምልክቶች ቅኝት፣ የተደረጉ ምርመራዎች እና ለተረካቢው ባለሙያ የሚሰጥ መመሪያ...' : 'Summary of findings, vitals reviewed, diagnostic considerations for the incoming doctor...'"
+              ></textarea>
+            </mat-form-field>
+            <span style="font-size: 11px; color: var(--app-text-muted);">
+              {{ i18n.isAmharic() ? 'ይህ ማስታወሻ በሚስጥራዊ የቡድን ማስታወሻዎች (Internal Notes) ውስጥ በቋሚነት ይመዘገባል።' : 'This handover note is automatically documented into the confidential internal notes log.' }}
+            </span>
+          </div>
         </div>
-      </app-state-panel>
-    </mat-card-content>
 
-    <mat-card-actions class="chat-input-bar">
-      <mat-form-field appearance="outline" class="chat-input-field">
-        <input
-          matInput
-          [ngModel]="newMessage()"
-          (ngModelChange)="newMessage.set($event)"
-          (keyup.enter)="sendMessage()"
-          placeholder="Type a message..."
-        />
-      </mat-form-field>
-      <button mat-mini-fab color="primary" type="button" (click)="sendMessage()" [disabled]="loading() || !newMessage().trim()">
-        <mat-icon>send</mat-icon>
-      </button>
-    </mat-card-actions>
-  </mat-card>
+        <div class="modal-footer">
+          <button mat-stroked-button type="button" (click)="closeReferDialog()" [disabled]="submittingReferral()">
+            {{ i18n.isAmharic() ? 'ይቅር' : 'Cancel' }}
+          </button>
+          <button
+            mat-flat-button
+            color="accent"
+            type="button"
+            (click)="submitReferral()"
+            [disabled]="submittingReferral() || !referTargetAgentId()"
+          >
+            <mat-icon [class.spin-icon]="submittingReferral()">{{ submittingReferral() ? 'sync' : 'send' }}</mat-icon>
+            <span>{{ submittingReferral() ? (i18n.isAmharic() ? 'በማስተላለፍ ላይ...' : 'Referring...') : (i18n.isAmharic() ? 'ሪፈራሉን አጽድቅና አስተላልፍ' : 'Confirm & Transfer') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 
-  <section>
-    <h2>Documents</h2>
+  <!-- ==============================================
+       REJECT REFERRAL MODAL (ADMIN)
+  =============================================== -->
+  @if (showRejectDialog()) {
+    <div class="modal-backdrop" (click)="closeRejectDialog()">
+      <div class="modal-card" (click)="$event.stopPropagation()" style="max-width: 480px;">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="modal-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+              <mat-icon>cancel</mat-icon>
+            </div>
+            <div>
+              <h3>{{ i18n.isAmharic() ? 'ሪፈራሉን ውድቅ አድርግ' : 'Decline Referral Transfer' }}</h3>
+              <span class="modal-subtitle">{{ i18n.isAmharic() ? 'የውድቅ የማድረጊያ ምክንያት ያስገቡ' : 'Specify administrative reason for declining' }}</span>
+            </div>
+          </div>
+          <button mat-icon-button type="button" (click)="closeRejectDialog()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
 
-    <input type="file" (change)="onFileSelected($event)" />
+        <div class="modal-body">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ i18n.isAmharic() ? 'የውድቅ የማድረጊያ ምክንያት' : 'Decline Reason' }}</mat-label>
+            <textarea
+              matInput
+              [ngModel]="rejectReasonInput()"
+              (ngModelChange)="rejectReasonInput.set($event)"
+              rows="3"
+              [placeholder]="i18n.isAmharic() ? 'ለምሳሌ: የመጀመሪያው ባለሙያ ክትትሉን እንዲቀጥል ተወስኗል...' : 'e.g., Clinical triage determines current doctor should continue care...'"
+            ></textarea>
+          </mat-form-field>
+        </div>
 
-    <app-state-panel
-      [loading]="documentsLoading()"
-      [error]="documentsError()"
-      [empty]="documents().length === 0"
-      emptyMessage="No documents uploaded."
-      emptyIcon="description"
-      [retry]="loadDocuments.bind(this)"
-    >
-      <ul>
-        @for (d of documents(); track d.id) {
-          <li>
-            {{ d.fileName }}
-            <small>({{ d.uploadedBy }} · {{ d.fileSizeBytes }} bytes)</small>
-            <button type="button" (click)="downloadDocument(d)">Download</button>
-          </li>
-        }
-      </ul>
-    </app-state-panel>
-  </section>
+        <div class="modal-footer">
+          <button mat-stroked-button type="button" (click)="closeRejectDialog()" [disabled]="rejectingReferral()">
+            {{ i18n.isAmharic() ? 'ይቅር' : 'Cancel' }}
+          </button>
+          <button
+            mat-flat-button
+            color="warn"
+            type="button"
+            (click)="confirmRejectReferral()"
+            [disabled]="rejectingReferral()"
+          >
+            <mat-icon [class.spin-icon]="rejectingReferral()">{{ rejectingReferral() ? 'sync' : 'gavel' }}</mat-icon>
+            <span>{{ rejectingReferral() ? (i18n.isAmharic() ? 'በመመዝገብ ላይ...' : 'Declining...') : (i18n.isAmharic() ? 'ውድቅ አድርግ' : 'Confirm Decline') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
 </div>

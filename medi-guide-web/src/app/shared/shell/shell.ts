@@ -6,12 +6,16 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DatePipe } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { SignalRService } from '../../core/services/signalr';
 import { NotificationService } from '../../core/services/notification';
 import { NotificationDto } from '../../core/models/notification.model';
+import { TranslationService } from '../../core/services/translation';
+import { ThemeService } from '../../core/services/theme';
+import { MatDividerModule } from '@angular/material/divider';
 
 const NOTIF_PAGE_SIZE = 5;
 
@@ -29,7 +33,9 @@ const NOTIF_PAGE_SIZE = 5;
     MatMenuModule,
     MatListModule,
     MatProgressSpinnerModule,
+    MatTooltipModule,
     DatePipe,
+    MatDividerModule,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
@@ -39,7 +45,10 @@ export class Shell implements OnInit, OnDestroy {
   private readonly signalR = inject(SignalRService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
+  readonly i18n = inject(TranslationService);
+  readonly themeService = inject(ThemeService);
 
+  isLoggedIn = this.auth.isLoggedIn;
   user = this.auth.currentUser;
   isPatient = this.auth.isPatient;
   isAgent = this.auth.isAgent;
@@ -58,11 +67,19 @@ export class Shell implements OnInit, OnDestroy {
     () => (this.unreadCount() > 99 ? '99+' : this.unreadCount())
   );
 
-  homeLink = computed(() => {
-    if (this.isAdmin()) return '/admin';
-    if (this.isAgent()) return '/agent';
-    return '/patient';
+  homeLink = computed(() => '/');
+
+  userRoleLabel = computed(() => {
+    if (this.isAdmin()) return this.i18n.t('role.admin');
+    if (this.isAgent()) return this.i18n.t('role.agent');
+    return this.i18n.t('role.patient');
   });
+
+  userInitial = computed(() => {
+    const name = this.user()?.fullName?.trim();
+    return name && name.length > 0 ? name.charAt(0).toUpperCase() : 'U';
+  });
+
 
   ngOnInit() {
     if (!this.auth.isLoggedIn()) return;

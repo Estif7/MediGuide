@@ -1,0 +1,18 @@
+@if (feedback.activeFeedback(); as item) {
+  <div class="feedback-overlay-container" aria-live="assertive" role="alert">
+    <div class="feedback-card" [ngClass]="item.type">
+      <div class="feedback-icon-box">
+        <mat-icon>{{ getIcon(item.type) }}</mat-icon>
+      </div>
+      <div class="feedback-content">
+        @if (item.title) {
+          <h4 class="feedback-title">{{ item.title }}</h4>
+        }
+        <p class="feedback-message">{{ item.message }}</p>
+      </div>
+      <button mat-icon-button type="button" class="feedback-close-btn" (click)="dismiss()" aria-label="Close notification">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+}

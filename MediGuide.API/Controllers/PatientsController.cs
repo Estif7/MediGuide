@@ -38,43 +38,69 @@ public class PatientsController : ControllerBase
             .OrderBy(p => p.FullName)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(p => new PatientDto(
-                p.Id,
-                p.FullName,
-                p.Email,
-                p.PhoneNumber,
-                p.PreferredLanguage,
-                p.IsActive))
+            .Select(p => ToDto(p))
             .ToListAsync();
 
         return Ok(new PagedResult<PatientDto>(patients, totalCount, page, pageSize));
     }
 
     [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<PatientDto>> GetCurrentPatient()
+    {
+        if (!Guid.TryParse(User.FindFirst("patientId")?.Value, out var patientId))
+            return Forbid();
+
+        var patient = await _context.Patients.FindAsync(patientId);
+        if (patient is null || !patient.IsActive)
+            return NotFound();
+
+        return Ok(ToDto(patient));
+    }
+
+    [Authorize]
+    [HttpPatch("me")]
+    public async Task<ActionResult<PatientDto>> UpdateCurrentPatient(UpdatePatientProfileDto dto)
+    {
+        if (!Guid.TryParse(User.FindFirst("patientId")?.Value, out var patientId))
+            return Forbid();
+
+        var patient = await _context.Patients.FindAsync(patientId);
+        if (patient is null || !patient.IsActive)
+            return NotFound();
+
+        patient.FullName = dto.FullName;
+        patient.PhoneNumber = dto.PhoneNumber;
+        if (!string.IsNullOrWhiteSpace(dto.PreferredLanguage))
+            patient.PreferredLanguage = dto.PreferredLanguage;
+        patient.DateOfBirth = dto.DateOfBirth;
+        patient.Gender = dto.Gender;
+        patient.EmergencyContactName = dto.EmergencyContactName;
+        patient.EmergencyContactPhone = dto.EmergencyContactPhone;
+        patient.Allergies = dto.Allergies;
+        patient.ChronicConditions = dto.ChronicConditions;
+        patient.CurrentMedications = dto.CurrentMedications;
+        patient.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(ToDto(patient));
+    }
+
+    [Authorize]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<PatientDto>> GetById(Guid id)
     {
-        if (!User.IsInRole("Admin")
+        if (!User.IsInRole("Admin") && !User.IsInRole("Agent")
             && (!Guid.TryParse(User.FindFirst("patientId")?.Value, out var patientId) || patientId != id))
         {
             return Forbid();
         }
 
-        var patient = await _context.Patients
-            .Where(p => p.Id == id)
-            .Select(p => new PatientDto(
-                p.Id,
-                p.FullName,
-                p.Email,
-                p.PhoneNumber,
-                p.PreferredLanguage,
-                p.IsActive))
-            .FirstOrDefaultAsync();
-
+        var patient = await _context.Patients.FindAsync(id);
         if (patient is null)
             return NotFound();
 
-        return Ok(patient);
+        return Ok(ToDto(patient));
     }
 
     [Authorize(Roles = "Admin")]
@@ -86,20 +112,34 @@ public class PatientsController : ControllerBase
             FullName = dto.FullName,
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
-            PreferredLanguage = dto.PreferredLanguage ?? "en"
+            PreferredLanguage = dto.PreferredLanguage ?? "en",
+            DateOfBirth = dto.DateOfBirth,
+            Gender = dto.Gender,
+            EmergencyContactName = dto.EmergencyContactName,
+            EmergencyContactPhone = dto.EmergencyContactPhone,
+            Allergies = dto.Allergies,
+            ChronicConditions = dto.ChronicConditions,
+            CurrentMedications = dto.CurrentMedications
         };
 
         _context.Patients.Add(patient);
         await _context.SaveChangesAsync();
 
-        var result = new PatientDto(
-            patient.Id,
-            patient.FullName,
-            patient.Email,
-            patient.PhoneNumber,
-            patient.PreferredLanguage,
-            patient.IsActive);
-
-        return CreatedAtAction(nameof(GetById), new { id = patient.Id }, result);
+        return CreatedAtAction(nameof(GetById), new { id = patient.Id }, ToDto(patient));
     }
+
+    private static PatientDto ToDto(Patient p) => new(
+        p.Id,
+        p.FullName,
+        p.Email,
+        p.PhoneNumber,
+        p.PreferredLanguage,
+        p.IsActive,
+        p.DateOfBirth,
+        p.Gender,
+        p.EmergencyContactName,
+        p.EmergencyContactPhone,
+        p.Allergies,
+        p.ChronicConditions,
+        p.CurrentMedications);
 }
