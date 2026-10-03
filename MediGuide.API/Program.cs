@@ -17,8 +17,16 @@ using Microsoft.AspNetCore.SignalR;
 using Scalar.AspNetCore;
 using Microsoft.OpenApi;
 using MediGuide.API.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Dynamic port configuration for cloud PaaS (Render, Koyeb, Cloud Run)
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
 
 // Add services
 builder.Services.AddControllers();
@@ -210,11 +218,37 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy
-            .WithOrigins("http://localhost:4200")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials());
+    {
+        var configuredOrigins = builder.Configuration["Cors:AllowedOrigins"]?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            ?? Array.Empty<string>();
+
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrEmpty(origin)) return false;
+
+            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            {
+                // Local development origins
+                if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
+
+                // Vercel deployment preview and production domains
+                if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
+
+                // Explicitly configured custom origins
+                if (configuredOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase) ||
+                    configuredOrigins.Contains(uri.Host, StringComparer.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
 });
 
 // SignalR
@@ -225,8 +259,14 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var app = builder.Build();
 
+// Forwarded headers for reverse proxies (Render, Koyeb, Cloud Run)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 // OpenAPI / Scalar
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("EnableOpenApi", false))
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
@@ -259,10 +299,7 @@ app.MapControllers();
 // SignalR Hubs
 app.MapHub<BookingHub>("/hubs/booking");
 
-// Seed data in Development
-if (app.Environment.IsDevelopment())
-{
-    await DataSeeder.SeedAsync(app.Services);
-}
+// Migrate database schema & seed essential data
+await DataSeeder.SeedAsync(app.Services);
 
 app.Run();

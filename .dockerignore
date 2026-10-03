@@ -1,0 +1,11 @@
+**/.git
+**/.github
+**/.vs
+**/.vscode
+**/bin
+**/obj
+medi-guide-web/node_modules
+medi-guide-web/dist
+Dockerfile*
+README*
+*.md
