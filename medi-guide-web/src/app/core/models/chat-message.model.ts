@@ -3,6 +3,7 @@ export interface ChatMessage {
   bookingId: string;
   senderId: string;
   senderRole: string;
+  senderName?: string;
   content: string;
   isRead: boolean;
   createdAt: string;

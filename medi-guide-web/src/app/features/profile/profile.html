@@ -1,0 +1,340 @@
+<div class="page profile-page">
+
+  @if (loading()) {
+    <div class="loading-state">
+      <mat-progress-spinner diameter="40" mode="indeterminate"></mat-progress-spinner>
+      <span>{{ i18n.t('common.loading') }}</span>
+    </div>
+  } @else {
+
+    <!-- HEADER / USER OVERVIEW -->
+    <div class="profile-header-card">
+      <div class="avatar-col">
+        <div class="profile-avatar">
+          {{ userInitial() }}
+        </div>
+      </div>
+
+      <div class="header-details">
+        <div class="name-row">
+          <h1>{{ profile()?.fullName }}</h1>
+          <div class="role-badges">
+            @for (role of profile()?.roles; track role) {
+              <span class="role-badge" [class.admin]="role === 'Admin'" [class.agent]="role === 'Agent'" [class.patient]="role === 'Patient'">
+                {{ role === 'Admin' ? i18n.t('role.admin') : role === 'Agent' ? i18n.t('role.agent') : i18n.t('role.patient') }}
+              </span>
+            }
+          </div>
+        </div>
+        <div class="meta-row">
+          <span><mat-icon>email</mat-icon> {{ profile()?.email }}</span>
+          @if (profile()?.phoneNumber) {
+            <span><mat-icon>phone</mat-icon> {{ profile()?.phoneNumber }}</span>
+          }
+          <span><mat-icon>calendar_today</mat-icon> {{ i18n.isAmharic() ? 'የተመዘገበበት' : 'Member since' }}: {{ profile()?.createdAt | date: 'mediumDate' }}</span>
+        </div>
+      </div>
+    </div>
+
+    @if (successMsg()) {
+      <div class="message success-alert">
+        <mat-icon>check_circle</mat-icon>
+        <span>{{ successMsg() }}</span>
+      </div>
+    }
+
+    @if (errorMsg()) {
+      <div class="message error-alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorMsg() }}</span>
+      </div>
+    }
+
+    <div class="profile-content-grid">
+
+      <!-- LEFT COLUMN: ACCOUNT & CLINICAL PROFILE -->
+      <div class="main-column">
+
+        <form [formGroup]="form" (ngSubmit)="saveProfile()">
+
+          <!-- ACCOUNT INFORMATION -->
+          <mat-card class="form-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="section-icon">account_circle</mat-icon>
+                <span>{{ i18n.t('profile.personal') }}</span>
+              </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ i18n.t('auth.fullName') }}</mat-label>
+                  <mat-icon matPrefix>person_outline</mat-icon>
+                  <input matInput formControlName="fullName" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ i18n.t('auth.email') }}</mat-label>
+                  <mat-icon matPrefix>mail_outline</mat-icon>
+                  <input matInput formControlName="email" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ i18n.t('auth.phone') }}</mat-label>
+                  <mat-icon matPrefix>phone</mat-icon>
+                  <input matInput formControlName="phoneNumber" />
+                </mat-form-field>
+
+                @if (isPatient()) {
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.t('auth.preferredLang') }}</mat-label>
+                    <mat-select formControlName="preferredLanguage">
+                      <mat-option value="en">English</mat-option>
+                      <mat-option value="am">አማርኛ (Amharic)</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- CLINICAL INTAKE (ONLY FOR PATIENTS) -->
+          @if (isPatient()) {
+            <mat-card class="form-card clinical-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon class="section-icon">medical_information</mat-icon>
+                  <span>{{ i18n.t('intake.title') }}</span>
+                </mat-card-title>
+                <mat-card-subtitle>
+                  {{ i18n.t('intake.sub') }}
+                </mat-card-subtitle>
+              </mat-card-header>
+
+              <mat-card-content>
+                <div class="form-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.t('intake.dob') }}</mat-label>
+                    <mat-icon matPrefix>calendar_today</mat-icon>
+                    <input matInput type="date" formControlName="dateOfBirth" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.t('intake.gender') }}</mat-label>
+                    <mat-select formControlName="gender">
+                      <mat-option value="">{{ i18n.t('intake.gender.select') }}</mat-option>
+                      <mat-option value="Male">{{ i18n.t('intake.gender.male') }}</mat-option>
+                      <mat-option value="Female">{{ i18n.t('intake.gender.female') }}</mat-option>
+                      <mat-option value="Other">{{ i18n.t('intake.gender.other') }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.t('intake.emergencyName') }}</mat-label>
+                    <mat-icon matPrefix>contact_phone</mat-icon>
+                    <input matInput formControlName="emergencyContactName" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.t('intake.emergencyPhone') }}</mat-label>
+                    <mat-icon matPrefix>phone</mat-icon>
+                    <input matInput formControlName="emergencyContactPhone" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>{{ i18n.t('intake.allergies') }}</mat-label>
+                    <mat-icon matPrefix>warning_amber</mat-icon>
+                    <textarea matInput rows="2" formControlName="allergies" [placeholder]="i18n.t('intake.allergiesPlaceholder')"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>{{ i18n.t('intake.chronic') }}</mat-label>
+                    <mat-icon matPrefix>healing</mat-icon>
+                    <textarea matInput rows="2" formControlName="chronicConditions" [placeholder]="i18n.t('intake.chronicPlaceholder')"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>{{ i18n.t('intake.medications') }}</mat-label>
+                    <mat-icon matPrefix>medication</mat-icon>
+                    <textarea matInput rows="2" formControlName="currentMedications" [placeholder]="i18n.t('intake.medicationsPlaceholder')"></textarea>
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          <!-- PROFESSIONAL & PRACTICE PROFILE (ONLY FOR AGENTS) -->
+          @if (isAgent()) {
+            <mat-card class="form-card agent-profile-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon class="section-icon">medical_services</mat-icon>
+                  <span>{{ i18n.isAmharic() ? 'የሙያና የህክምና አገልግሎት መገለጫ' : 'Professional Practice Profile' }}</span>
+                </mat-card-title>
+                <mat-card-subtitle>
+                  {{ i18n.isAmharic() ? 'የህክምና ማዕረግ፣ ክፍል፣ ልዩ የሙያ ዘርፍና የታካሚዎች ተቀባይነት ሁኔታዎን ያስተካክሉ' : 'Manage your clinical title, department, specialty focus, and intake availability' }}
+                </mat-card-subtitle>
+              </mat-card-header>
+
+              <mat-card-content>
+                <div class="form-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.isAmharic() ? 'የሙያ ማዕረግ (Title)' : 'Professional Title' }}</mat-label>
+                    <mat-icon matPrefix>badge</mat-icon>
+                    <input matInput formControlName="title" placeholder="MD, Consultant Pediatrician" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ i18n.isAmharic() ? 'የህክምና ክፍል / Department' : 'Medical Department' }}</mat-label>
+                    <mat-select formControlName="department">
+                      <mat-option value="General Practice">{{ i18n.isAmharic() ? 'አጠቃላይ ህክምና (General Practice)' : 'General Practice' }}</mat-option>
+                      <mat-option value="Pediatrics">{{ i18n.isAmharic() ? 'የህፃናት ህክምና (Pediatrics)' : 'Pediatrics' }}</mat-option>
+                      <mat-option value="Mental Health">{{ i18n.isAmharic() ? 'የአእምሮ ጤና (Mental Health)' : 'Mental Health' }}</mat-option>
+                      <mat-option value="Cardiology">{{ i18n.isAmharic() ? 'የልብ ህክምና (Cardiology)' : 'Cardiology' }}</mat-option>
+                      <mat-option value="Dermatology">{{ i18n.isAmharic() ? 'የቆዳ ህክምና (Dermatology)' : 'Dermatology' }}</mat-option>
+                      <mat-option value="Obstetrics & Gynecology">{{ i18n.isAmharic() ? 'የማህፀንና ፅንስ ህክምና (OB/GYN)' : 'Obstetrics & Gynecology' }}</mat-option>
+                      <mat-option value="Nutrition & Diet">{{ i18n.isAmharic() ? 'ስነ-ምግብ (Nutrition)' : 'Nutrition & Diet' }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>{{ i18n.isAmharic() ? 'ልዩ የሙያ ዘርፍ (Specialty Focus)' : 'Specialty Focus Area' }}</mat-label>
+                    <mat-icon matPrefix>verified</mat-icon>
+                    <input matInput formControlName="specialty" placeholder="Child Health, Neonatology & Acute Pediatric Care" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>{{ i18n.isAmharic() ? 'የታካሚዎች ተቀባይነት ሁኔታ (Consultation Availability)' : 'Consultation Intake Availability' }}</mat-label>
+                    <mat-select formControlName="isAvailable">
+                      <mat-option [value]="true">{{ i18n.isAmharic() ? '✅ ክፍት - አዲስ ታካሚዎችን ለመቀበል ዝግጁ ነኝ (Available for Consultations)' : '✅ Available for Consultations & Referrals' }}</mat-option>
+                      <mat-option [value]="false">{{ i18n.isAmharic() ? '⏸️ ስራ ላይ / እረፍት ላይ (Busy / Currently Not Taking New Consultations)' : '⏸️ Busy / Not Taking New Consultations' }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          <div class="save-action-row">
+            <button
+              mat-flat-button
+              color="primary"
+              class="save-btn"
+              type="submit"
+              [disabled]="saving() || form.invalid"
+            >
+              @if (saving()) {
+                <mat-progress-spinner diameter="18" mode="indeterminate"></mat-progress-spinner>
+                <span>{{ i18n.t('profile.saving') }}</span>
+              } @else {
+                <ng-container>
+                  <mat-icon>save</mat-icon>
+                  <span>{{ i18n.t('profile.save') }}</span>
+                </ng-container>
+              }
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+
+      <!-- RIGHT COLUMN: PASSWORD & SECURITY -->
+      <div class="side-column">
+
+        <mat-card class="form-card security-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon class="section-icon">lock</mat-icon>
+              <span>{{ i18n.t('profile.security') }}</span>
+            </mat-card-title>
+          </mat-card-header>
+
+          <mat-card-content>
+            @if (securitySuccessMsg()) {
+              <div class="message success-alert-sm">
+                <mat-icon>check_circle</mat-icon>
+                <span>{{ securitySuccessMsg() }}</span>
+              </div>
+            }
+
+            @if (securityErrorMsg()) {
+              <div class="message error-alert-sm">
+                <mat-icon>error_outline</mat-icon>
+                <span>{{ securityErrorMsg() }}</span>
+              </div>
+            }
+
+            <form [formGroup]="securityForm" (ngSubmit)="updatePassword()">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ i18n.t('profile.currentPass') }}</mat-label>
+                <mat-icon matPrefix>lock_outline</mat-icon>
+                <input
+                  matInput
+                  [type]="hideCurrentPassword() ? 'password' : 'text'"
+                  formControlName="currentPassword"
+                />
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="hideCurrentPassword.set(!hideCurrentPassword())"
+                >
+                  <mat-icon>{{ hideCurrentPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>{{ i18n.t('profile.newPass') }}</mat-label>
+                <mat-icon matPrefix>key</mat-icon>
+                <input
+                  matInput
+                  [type]="hideNewPassword() ? 'password' : 'text'"
+                  formControlName="newPassword"
+                />
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="hideNewPassword.set(!hideNewPassword())"
+                >
+                  <mat-icon>{{ hideNewPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>{{ i18n.t('profile.confirmPass') }}</mat-label>
+                <mat-icon matPrefix>check</mat-icon>
+                <input
+                  matInput
+                  type="password"
+                  formControlName="confirmPassword"
+                />
+              </mat-form-field>
+
+              <button
+                mat-stroked-button
+                color="primary"
+                class="security-btn"
+                type="submit"
+                [disabled]="changingPassword() || securityForm.invalid"
+              >
+                @if (changingPassword()) {
+                  <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+                  <span>{{ i18n.t('common.loading') }}</span>
+                } @else {
+                  <span>{{ i18n.isAmharic() ? 'የይለፍ ቃል ቀይር' : 'Update Password' }}</span>
+                }
+              </button>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+
+    </div>
+
+  }
+
+</div>

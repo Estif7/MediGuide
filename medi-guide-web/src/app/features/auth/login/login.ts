@@ -5,19 +5,28 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Router } from '@angular/router';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
+import { TranslationService } from '../../../core/services/translation';
+import { ThemeService } from '../../../core/services/theme';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    MatTooltipModule,
+    MatIconModule,
+    MatCheckboxModule,
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss',
@@ -26,9 +35,12 @@ export class Login {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  readonly i18n = inject(TranslationService);
+  readonly themeService = inject(ThemeService);
 
   error = signal<string | null>(null);
   loading = signal(false);
+  hidePassword = signal(true);
 
   form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -54,7 +66,7 @@ export class Login {
       },
       error: () => {
         this.loading.set(false);
-        this.error.set('Invalid email or password');
+        this.error.set(this.i18n.isAmharic() ? 'የተሳሳተ ኢሜይል ወይም የይለፍ ቃል።' : 'Invalid email or password');
       },
     });
   }

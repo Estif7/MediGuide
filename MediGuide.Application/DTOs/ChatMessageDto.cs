@@ -9,7 +9,8 @@ public record ChatMessageDto(
     string SenderRole,
     string Content,
     bool IsRead,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    string? SenderName = null
 );
 
 public record CreateChatMessageDto(

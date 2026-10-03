@@ -1,52 +1,241 @@
 <header class="app-header">
-  <a class="brand" [routerLink]="homeLink()">Medi-Guide</a>
+  <div class="header-container">
 
-  <nav class="nav-links" aria-label="Primary navigation">
-    @if (isPatient()) {
-      <a routerLink="/patient" routerLinkActive="active">My dashboard</a>
-    }
-    @if (isAgent()) {
-      <a routerLink="/agent" routerLinkActive="active">Agent dashboard</a>
-    }
-    @if (isAdmin()) {
-      <a routerLink="/admin" routerLinkActive="active">Admin</a>
-    }
-  </nav>
-
-  <div class="user-panel">
-    <button mat-icon-button [matMenuTriggerFor]="notifMenu" aria-label="Notifications">
-      <mat-icon [matBadge]="unreadCount() > 0 ? unreadCount() : null" matBadgeColor="warn" matBadgeSize="small">
-        notifications
-      </mat-icon>
-    </button>
-
-    <mat-menu #notifMenu="matMenu" class="notif-menu">
-      <div class="notif-header" (click)="$event.stopPropagation()">
-        <span>Notifications</span>
-        @if (unreadCount() > 0) {
-          <button mat-button type="button" (click)="markAllRead()">Mark all read</button>
-        }
+    <!-- Brand Lockup (Homepage Style: Emblem Badge + Crisp Typography, no green background) -->
+    <a class="brand-link" routerLink="/" title="Medi-Guide Homepage" aria-label="Medi-Guide Home">
+      <div class="brand-emblem-badge">
+        <img src="/assets/emblem.png" alt="Medi-Guide Emblem" class="emblem-img" />
       </div>
+      <div class="brand-text">
+        <span class="brand-title">MEDI-GUIDE</span>
+        <span class="brand-sub">ETHIOPIA</span>
+      </div>
+    </a>
 
-      @for (n of notifications(); track n.id) {
-        <button mat-menu-item [class.unread]="!n.isRead" (click)="onNotificationClick(n)">
-          <div class="notif-item">
-            <span class="notif-message">{{ n.message }}</span>
-            <small class="notif-time">{{ n.createdAt | date: 'short' }}</small>
-          </div>
-        </button>
-      } @empty {
-        <button mat-menu-item disabled>No notifications yet</button>
+    <!-- Subtle Vertical Divider -->
+    <div class="nav-vertical-divider"></div>
+
+    <!-- Desktop Navigation Links (Strictly Portal Items Only) -->
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      @if (isLoggedIn()) {
+        @if (isPatient()) {
+          <a routerLink="/patient" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="portal-nav-item">
+            <mat-icon>dashboard</mat-icon>
+            <span>{{ i18n.t('nav.dashboard') }}</span>
+          </a>
+        }
+
+        @if (isAgent()) {
+          <a routerLink="/agent" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="portal-nav-item">
+            <mat-icon>medical_services</mat-icon>
+            <span>{{ i18n.isAmharic() ? 'የባለሙያ ዳሽቦርድ' : 'Healthcare Portal' }}</span>
+          </a>
+        }
+
+        @if (isAdmin()) {
+          <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="portal-nav-item">
+            <mat-icon>admin_panel_settings</mat-icon>
+            <span>{{ i18n.isAmharic() ? 'አስተዳዳሪ ዳሽቦርድ' : 'Admin Portal' }}</span>
+          </a>
+
+          <a routerLink="/admin/users" routerLinkActive="active" class="portal-nav-item">
+            <mat-icon>people</mat-icon>
+            <span>{{ i18n.t('nav.manageUsers') }}</span>
+          </a>
+        }
       }
-    </mat-menu>
+    </nav>
 
-    <span class="user-name">{{ user()?.fullName }}</span>
-    <!-- <button mat-stroked-button color="primary" type="button" (click)="logout()">Logout</button> -->
-    <button mat-stroked-button class="logout-button" type="button" (click)="logout()">Logout</button>
+    <!-- Right Header Actions -->
+    <div class="header-actions">
 
+      <!-- Language Toggle Pill -->
+      <button
+        mat-stroked-button
+        type="button"
+        class="action-pill-btn lang-toggle"
+        (click)="i18n.toggleLanguage()"
+        aria-label="Toggle language"
+      >
+        <mat-icon>translate</mat-icon>
+        <span>{{ i18n.isAmharic() ? 'EN' : 'አማ' }}</span>
+      </button>
+
+      <!-- Theme Switcher -->
+      <button
+        mat-icon-button
+        type="button"
+        class="action-icon-btn theme-toggle"
+        (click)="themeService.toggleTheme()"
+        [attr.aria-label]="i18n.t('theme.toggle')"
+        [matTooltip]="themeService.isDark() ? i18n.t('theme.light') : i18n.t('theme.dark')"
+      >
+        <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
+      @if (isLoggedIn()) {
+        <!-- Redesigned Notifications Bell & Dropdown -->
+        <button
+          mat-icon-button
+          class="action-icon-btn notif-btn"
+          [matMenuTriggerFor]="notifMenu"
+          [attr.aria-label]="i18n.t('nav.notifications')"
+        >
+          <mat-icon
+            [matBadge]="unreadCount() > 0 ? unreadBadge() : null"
+            matBadgeColor="warn"
+            matBadgeSize="small"
+          >
+            notifications
+          </mat-icon>
+        </button>
+
+        <mat-menu #notifMenu="matMenu" class="notif-menu-dropdown" xPosition="before">
+          <div class="notif-dropdown-header" (click)="$event.stopPropagation()">
+            <div class="notif-header-title">
+              <mat-icon>notifications</mat-icon>
+              <strong>{{ i18n.t('nav.notifications') }}</strong>
+            </div>
+            @if (unreadCount() > 0) {
+              <button mat-button class="mark-read-btn" type="button" (click)="markAllRead()">
+                {{ i18n.t('nav.markAllRead') }}
+              </button>
+            }
+          </div>
+
+          <div class="notif-items-container">
+            @for (n of notifications(); track n.id) {
+              <button
+                mat-menu-item
+                class="notif-row-btn"
+                [class.unread]="!n.isRead"
+                (click)="onNotificationClick(n)"
+              >
+                <div class="notif-avatar-icon" [class.consultation]="!!n.bookingId">
+                  <mat-icon>{{ n.bookingId ? 'medical_services' : 'campaign' }}</mat-icon>
+                </div>
+                <div class="notif-text-wrap">
+                  <span class="notif-msg">{{ n.message }}</span>
+                  <span class="notif-date">{{ n.createdAt | date: 'short' }}</span>
+                </div>
+              </button>
+            } @empty {
+              <div class="notif-empty-state">
+                <mat-icon>done_all</mat-icon>
+                <p>{{ i18n.t('nav.noNotifications') }}</p>
+              </div>
+            }
+          </div>
+
+          @if (hasMoreNotifications() || notifications().length > 5) {
+            <div class="notif-dropdown-footer" (click)="$event.stopPropagation()">
+              @if (hasMoreNotifications()) {
+                <button mat-button type="button" (click)="loadMoreNotifications()" [disabled]="notifLoadingMore()">
+                  @if (notifLoadingMore()) {
+                    <mat-progress-spinner diameter="14" mode="indeterminate" />
+                  } @else {
+                    {{ i18n.t('nav.loadMore') }}
+                  }
+                </button>
+              }
+              @if (notifications().length > 5) {
+                <button mat-button type="button" (click)="collapseNotifications()">
+                  {{ i18n.t('nav.showLess') }}
+                </button>
+              }
+            </div>
+          }
+        </mat-menu>
+
+        <!-- Integrated User Profile Pill (From User's Screenshot aesthetic) -->
+        <button
+          class="user-pill-trigger"
+          [matMenuTriggerFor]="userProfileMenu"
+          type="button"
+          aria-label="User account menu"
+        >
+          <div class="user-pill-avatar">
+            {{ userInitial() }}
+          </div>
+          <div class="user-pill-meta">
+            <span class="user-pill-name">{{ user()?.fullName || 'User' }}</span>
+            <span class="user-pill-role">{{ userRoleLabel() }}</span>
+          </div>
+          <mat-icon class="user-pill-chevron">expand_more</mat-icon>
+        </button>
+
+        <mat-menu #userProfileMenu="matMenu" class="user-profile-dropdown" xPosition="before">
+          <div class="user-menu-header">
+            <div class="menu-avatar-large">
+              {{ userInitial() }}
+            </div>
+            <div class="menu-user-details">
+              <strong>{{ user()?.fullName }}</strong>
+              <small>{{ user()?.email }}</small>
+              <span class="menu-role-chip">{{ userRoleLabel() }}</span>
+            </div>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <a mat-menu-item routerLink="/profile">
+            <mat-icon>person</mat-icon>
+            <span>{{ i18n.t('nav.profile') }}</span>
+          </a>
+
+          <mat-divider></mat-divider>
+
+          <button mat-menu-item class="signout-item" type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>{{ i18n.t('nav.logout') }}</span>
+          </button>
+        </mat-menu>
+
+      } @else {
+        <a routerLink="/login" mat-button class="nav-auth-login">
+          <span>{{ i18n.t('nav.signIn') }}</span>
+        </a>
+        <a routerLink="/register" mat-flat-button color="primary" class="nav-auth-register">
+          <span>{{ i18n.isAmharic() ? 'ምክክር ይጠይቁ' : 'Consult Now' }}</span>
+        </a>
+      }
+
+    </div>
   </div>
 </header>
 
 <main class="app-shell-main">
   <router-outlet />
 </main>
+
+<!-- MOBILE BOTTOM NAVIGATION BAR FOR PORTAL USERS -->
+@if (isLoggedIn()) {
+  <nav class="portal-bottom-bar" aria-label="Portal Navigation">
+    @if (isPatient()) {
+      <a routerLink="/patient" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <mat-icon>dashboard</mat-icon>
+        <span>{{ i18n.t('nav.dashboard') }}</span>
+      </a>
+    }
+    @if (isAgent()) {
+      <a routerLink="/agent" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <mat-icon>dashboard</mat-icon>
+        <span>{{ i18n.t('nav.dashboard') }}</span>
+      </a>
+    }
+    @if (isAdmin()) {
+      <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <mat-icon>dashboard</mat-icon>
+        <span>{{ i18n.t('nav.dashboard') }}</span>
+      </a>
+      <a routerLink="/admin/users" routerLinkActive="active">
+        <mat-icon>people</mat-icon>
+        <span>{{ i18n.t('nav.manageUsers') }}</span>
+      </a>
+    }
+    <a routerLink="/profile" routerLinkActive="active">
+      <mat-icon>person</mat-icon>
+      <span>{{ i18n.t('nav.profile') }}</span>
+    </a>
+  </nav>
+}

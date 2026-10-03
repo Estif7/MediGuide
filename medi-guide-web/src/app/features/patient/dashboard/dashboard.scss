@@ -1,0 +1,622 @@
+/* =====================================================
+   PATIENT PAGE
+===================================================== */
+
+.patient-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  padding: 35px 40px 50px;
+
+  color: var(--app-text);
+}
+
+
+/* =====================================================
+   WELCOME SECTION
+===================================================== */
+
+.welcome-section {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 25px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+
+  .section-eyebrow {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    color: var(--app-primary);
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.2;
+    font-weight: 800;
+    color: var(--app-text);
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: var(--app-text-muted);
+    font-size: 14px;
+  }
+}
+
+.availability-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #16a34a;
+    box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
+  }
+}
+
+
+/* =====================================================
+   MESSAGE
+===================================================== */
+
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 13px 16px;
+
+  margin-bottom: 25px;
+
+  border-radius: 10px;
+
+  background: #edf9f5;
+
+  border: 1px solid #d5f0e6;
+
+  color: #18765b;
+
+  font-size: 13px;
+}
+
+.success-message mat-icon {
+  font-size: 19px;
+}
+
+
+/* =====================================================
+   STATS
+===================================================== */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 18px;
+
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  min-height: 105px;
+
+  padding: 22px 24px;
+
+  background: var(--app-card-bg);
+
+  border: 1px solid var(--app-card-border);
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 3px 15px rgba(20, 60, 70, 0.035);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 25px rgba(20, 60, 70, 0.08);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 12px;
+
+  background: rgba(var(--app-primary-rgb), 0.12);
+
+  color: var(--app-primary);
+}
+
+.stat-icon mat-icon {
+  font-size: 23px;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+
+  color: var(--app-text-muted);
+}
+
+.stat-content strong {
+  font-size: 22px;
+
+  color: var(--app-text);
+}
+
+.stat-arrow {
+  margin-left: auto;
+
+  font-size: 19px;
+
+  color: var(--app-text-muted);
+}
+
+
+/* =====================================================
+   MAIN CONTENT
+===================================================== */
+
+.content-grid {
+  display: grid;
+
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+
+  gap: 24px;
+
+  align-items: start;
+}
+
+
+/* =====================================================
+   CARDS
+===================================================== */
+
+.support-card,
+.bookings-card {
+  background: var(--app-card-bg);
+
+  border: 1px solid var(--app-card-border);
+
+  border-radius: 16px;
+
+  padding: 27px;
+
+  box-shadow:
+    0 3px 18px rgba(20, 60, 70, 0.035);
+}
+
+
+/* =====================================================
+   SECTION HEADING
+===================================================== */
+
+.section-heading {
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+
+  margin-bottom: 27px;
+}
+
+.section-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 11px;
+
+  background: rgba(var(--app-primary-rgb), 0.12);
+
+  color: var(--app-primary);
+}
+
+.section-icon mat-icon {
+  font-size: 21px;
+}
+
+.section-heading h2 {
+  margin: 0;
+
+  font-size: 18px;
+  font-weight: 700;
+
+  letter-spacing: -0.3px;
+  color: var(--app-text);
+}
+
+.section-heading p {
+  margin: 4px 0 0;
+
+  font-size: 12px;
+
+  color: var(--app-text-muted);
+}
+
+
+/* =====================================================
+   FORM
+===================================================== */
+
+.support-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.full-width mat-icon[matPrefix] {
+  margin-right: 10px;
+
+  color: #8b999e;
+}
+
+.full-width:focus-within mat-icon[matPrefix] {
+  color: #087f8c;
+}
+
+
+/* =====================================================
+   SERVICE OPTION
+===================================================== */
+
+.service-option {
+  display: flex;
+  justify-content: space-between;
+
+  width: 100%;
+
+  gap: 20px;
+}
+
+.price {
+  color: #087f8c;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+/* =====================================================
+   FORM ACTION
+===================================================== */
+
+.form-action {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 8px;
+}
+
+.request-button {
+  height: 48px;
+
+  padding: 0 22px;
+
+  border-radius: 9px !important;
+
+  background: #087f8c !important;
+  color: white !important;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.request-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 8px 20px rgba(8, 127, 140, 0.20);
+}
+
+.request-button mat-icon {
+  font-size: 18px;
+}
+
+.request-button mat-progress-spinner {
+  --mdc-circular-progress-active-indicator-color: white;
+}
+
+
+/* =====================================================
+   BOOKINGS
+===================================================== */
+
+.booking-list {
+  padding: 0 !important;
+}
+
+.booking-item {
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+
+  min-height: 70px;
+
+  padding: 11px 4px;
+
+  border-bottom: 1px solid #edf1f2;
+
+  text-decoration: none;
+
+  color: inherit;
+
+  transition: background 0.2s ease;
+}
+
+.booking-item:last-child {
+  border-bottom: none;
+}
+
+.booking-item:hover {
+  background: #f7fbfb;
+}
+
+.booking-icon {
+  width: 39px;
+  height: 39px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 10px;
+
+  background: #edf8f9;
+
+  color: #087f8c;
+}
+
+.booking-icon mat-icon {
+  font-size: 19px;
+}
+
+.booking-info {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.booking-name {
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #24353b;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.booking-details {
+  font-size: 11px;
+
+  color: #849196;
+}
+
+.booking-right {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  margin-left: auto;
+}
+
+.booking-price {
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #087f8c;
+}
+
+.booking-right mat-icon {
+  font-size: 18px;
+
+  color: #b2bdc0;
+}
+
+
+/* =====================================================
+   HEALTH NOTICE
+===================================================== */
+
+.health-notice {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  margin-top: 24px;
+
+  padding: 17px 20px;
+
+  border-radius: 12px;
+
+  background: var(--app-card-bg);
+
+  border: 1px solid var(--app-card-border);
+
+  color: var(--app-text-muted);
+}
+
+.health-notice > mat-icon {
+  color: var(--app-primary);
+
+  font-size: 20px;
+}
+
+.health-notice strong,
+.health-notice span {
+  display: block;
+}
+
+.health-notice strong {
+  margin-bottom: 3px;
+
+  font-size: 12px;
+
+  color: var(--app-text);
+}
+
+.health-notice span {
+  font-size: 11px;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 1050px) {
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bookings-card {
+    min-height: auto;
+  }
+
+}
+
+
+@media (max-width: 750px) {
+
+  .patient-page {
+    padding: 25px 20px 40px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header h1 {
+    font-size: 23px;
+  }
+
+  .profile-badge {
+    display: none;
+  }
+
+}
+
+
+@media (max-width: 500px) {
+
+  .patient-page {
+    padding: 20px 15px 35px;
+  }
+
+  .welcome-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .welcome-icon mat-icon {
+    font-size: 24px;
+  }
+
+  .page-header {
+    margin-bottom: 25px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .page-header p {
+    font-size: 12px;
+  }
+
+  .support-card,
+  .bookings-card {
+    padding: 20px 17px;
+
+    border-radius: 13px;
+  }
+
+  .section-heading {
+    margin-bottom: 22px;
+  }
+
+  .form-action {
+    justify-content: stretch;
+  }
+
+  .request-button {
+    width: 100%;
+  }
+
+  .booking-price {
+    display: none;
+  }
+
+}

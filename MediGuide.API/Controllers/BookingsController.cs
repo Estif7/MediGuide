@@ -50,6 +50,7 @@ public class BookingsController : ControllerBase
             .Include(b => b.Patient)
             .Include(b => b.ServiceCategory)
             .Include(b => b.Agent)
+            .Include(b => b.ReferredToAgent)
             .AsQueryable();
 
         if (!User.IsInRole("Admin"))
@@ -100,7 +101,12 @@ public class BookingsController : ControllerBase
                 b.Status,
                 b.Amount,
                 b.Notes,
-                b.CreatedAt))
+                b.CreatedAt,
+                b.IsReferralPendingApproval,
+                b.ReferredToAgentId,
+                b.ReferredToAgent != null ? b.ReferredToAgent.FullName : null,
+                b.ReferralReason,
+                b.ReferralClinicalNotes))
             .ToListAsync();
 
         return Ok(new PagedResult<BookingDto>(bookings, totalCount, page, pageSize));
@@ -143,13 +149,21 @@ public class BookingsController : ControllerBase
         if (category is null || !category.IsActive)
             return BadRequest("Service category not found or inactive.");
 
+        decimal multiplier = dto.ResponseTime switch
+        {
+            ResponseTime.Priority => 1.75m,
+            ResponseTime.Expedited => 1.30m,
+            _ => 1.0m
+        };
+        var finalAmount = Math.Round(category.BasePrice * multiplier, 2);
+
         var booking = new Booking
         {
             PatientId = dto.PatientId,
             ServiceCategoryId = dto.ServiceCategoryId,
             ResponseTime = dto.ResponseTime,
-            Status = BookingStatus.PendingPayment,   // payment deferred for now
-            Amount = category.BasePrice,             // snapshot the price
+            Status = BookingStatus.PendingPayment,
+            Amount = finalAmount,
             Notes = dto.Notes
         };
 
@@ -167,27 +181,79 @@ public class BookingsController : ControllerBase
             booking.ServiceCategoryId,
             booking.ServiceCategory.Name,
             booking.AgentId,
-            null,
+            booking.Agent?.FullName,
             booking.ResponseTime,
             booking.Status,
             booking.Amount,
             booking.Notes,
-            booking.CreatedAt);
+            booking.CreatedAt,
+            booking.IsReferralPendingApproval,
+            booking.ReferredToAgentId,
+            null,
+            booking.ReferralReason,
+            booking.ReferralClinicalNotes);
 
         return CreatedAtAction(nameof(GetById), new { id = booking.Id }, result);
     }
 
     
 
-    [Authorize(Roles = "Admin")]
-[HttpPatch("{id:guid}/assign")]
-public async Task<ActionResult<BookingDto>> AssignAgent(Guid id, [FromBody] AssignAgentDto dto)
-{
-    var booking = await LoadBooking(id);
-    if (booking is null) return NotFound();
+    [Authorize(Roles = "Patient,Admin")]
+    [HttpPost("{id:guid}/simulate-payment")]
+    public async Task<ActionResult<BookingDto>> SimulatePayment(Guid id, [FromBody] SimulatePaymentDto? dto)
+    {
+        var booking = await LoadBooking(id);
+        if (booking is null) return NotFound();
 
-    if (booking.Status != BookingStatus.Paid)
-        return BadRequest("Booking must be paid before an agent can be assigned.");
+        if (!User.IsInRole("Admin"))
+        {
+            if (!Guid.TryParse(User.FindFirst("patientId")?.Value, out var patientId) || booking.PatientId != patientId)
+                return Forbid();
+        }
+
+        if (booking.Status != BookingStatus.PendingPayment)
+            return BadRequest("Only bookings pending payment can be paid.");
+
+        var paymentMethod = string.IsNullOrWhiteSpace(dto?.PaymentMethod) ? "Telebirr" : dto.PaymentMethod;
+
+        booking.Status = BookingStatus.Paid;
+        booking.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+            .SendAsync("BookingUpdated", ToDto(booking));
+
+        var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+        if (patientUserId is not null)
+        {
+            await _notificationService.NotifyAsync(
+                patientUserId, "PaymentConfirmed",
+                $"Payment of {booking.Amount:N2} ETB confirmed via {paymentMethod}. Your consultation request has been queued for specialist assignment.", booking.Id);
+        }
+
+        var admins = await _userManager.GetUsersInRoleAsync("Admin");
+        foreach (var admin in admins)
+        {
+            await _notificationService.NotifyAsync(
+                admin.Id, "BookingPaid",
+                $"Booking for {booking.Patient.FullName} ({booking.ServiceCategory.Name}) has been paid via {paymentMethod} ({booking.Amount:N2} ETB). Ready for agent assignment.", booking.Id);
+        }
+
+        return Ok(ToDto(booking));
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("{id:guid}/assign")]
+    public async Task<ActionResult<BookingDto>> AssignAgent(Guid id, [FromBody] AssignAgentDto dto)
+    {
+        var booking = await LoadBooking(id);
+        if (booking is null) return NotFound();
+
+        if (booking.Status == BookingStatus.PendingPayment)
+            return BadRequest("Booking must be paid before an agent can be assigned. Please complete payment first.");
+
+        if (booking.Status == BookingStatus.Completed || booking.Status == BookingStatus.Cancelled)
+            return BadRequest("Cannot assign an agent to a completed or cancelled booking.");
 
     var agent = await _context.Agents.FindAsync(dto.AgentId);
     if (agent is null || !agent.IsActive)
@@ -228,6 +294,9 @@ public async Task<ActionResult<BookingDto>> Accept(Guid id)
     if (booking.Status != BookingStatus.Assigned)
         return BadRequest("Only assigned bookings can be accepted.");
 
+    if (booking.IsReferralPendingApproval)
+        return BadRequest("Cannot accept consultation while a referral approval is pending.");
+
     booking.Status = BookingStatus.InProgress;
     booking.UpdatedAt = DateTime.UtcNow;
     await _context.SaveChangesAsync();
@@ -246,76 +315,309 @@ public async Task<ActionResult<BookingDto>> Accept(Guid id)
     return Ok(ToDto(booking));
 }
 
-[Authorize(Roles = "Agent")]
-[HttpPatch("{id:guid}/decline")]
-public async Task<ActionResult<BookingDto>> Decline(Guid id)
-{
-    var booking = await LoadBooking(id);
-    if (booking is null) return NotFound();
-
-    var agentId = GetCurrentAgentId();
-    if (agentId is null || booking.AgentId != agentId)
-        return Forbid();
-
-    if (booking.Status != BookingStatus.Assigned)
-        return BadRequest("Only assigned bookings can be declined.");
-
-    booking.AgentId = null;
-    booking.Status = BookingStatus.Paid; // back to admin pool
-    booking.UpdatedAt = DateTime.UtcNow;
-    await _context.SaveChangesAsync();
-
-    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
-        .SendAsync("BookingUpdated", ToDto(booking));
-    
-    var admins = await _userManager.GetUsersInRoleAsync("Admin");
-    foreach (var admin in admins)
+    [Authorize(Roles = "Agent")]
+    [HttpPatch("{id:guid}/decline")]
+    public async Task<ActionResult<BookingDto>> Decline(Guid id)
     {
-        await _notificationService.NotifyAsync(
-            admin.Id, "BookingDeclined",
-            "An agent declined a booking assignment — needs reassignment.", booking.Id);
+        var booking = await LoadBooking(id);
+        if (booking is null) return NotFound();
+
+        var agentId = GetCurrentAgentId();
+        if (agentId is null || booking.AgentId != agentId)
+            return Forbid();
+
+        if (booking.Status != BookingStatus.Assigned)
+            return BadRequest("Only assigned bookings can be declined.");
+
+        var decliningAgentName = booking.Agent?.FullName ?? "Healthcare Professional";
+
+        // Return booking to Paid status so Administrator can manually reassign
+        // based on knowledge of department, specialty, and patient needs
+        booking.AgentId = null;
+        booking.Status = BookingStatus.Paid;
+        booking.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+            .SendAsync("BookingUpdated", ToDto(booking));
+
+        var admins = await _userManager.GetUsersInRoleAsync("Admin");
+        foreach (var admin in admins)
+        {
+            await _notificationService.NotifyAsync(
+                admin.Id, "BookingDeclined",
+                $"{decliningAgentName} declined booking #{booking.Id.ToString()[..8]} ({booking.ServiceCategory.Name}). Manual assignment required based on specialty needs.", booking.Id);
+        }
+
+        return Ok(ToDto(booking));
     }
 
-    return Ok(ToDto(booking));
-}
-
-[Authorize(Roles = "Agent")]
+[Authorize(Roles = "Agent,Admin")]
 [HttpPatch("{id:guid}/refer")]
-public async Task<ActionResult<BookingDto>> Refer(Guid id, [FromBody] AssignAgentDto dto)
+public async Task<ActionResult<BookingDto>> Refer(Guid id, [FromBody] ReferBookingDto dto)
 {
     var booking = await LoadBooking(id);
     if (booking is null) return NotFound();
 
-    var agentId = GetCurrentAgentId();
-    if (agentId is null || booking.AgentId != agentId)
-        return Forbid();
+    Guid referringAgentId;
+    string referringAgentName;
+
+    if (User.IsInRole("Admin"))
+    {
+        referringAgentId = booking.AgentId ?? Guid.Empty;
+        referringAgentName = booking.Agent?.FullName ?? "Admin";
+    }
+    else
+    {
+        var agentId = GetCurrentAgentId();
+        if (agentId is null || booking.AgentId != agentId)
+            return Forbid();
+        referringAgentId = agentId.Value;
+        referringAgentName = booking.Agent?.FullName ?? "Specialist";
+    }
 
     if (booking.Status != BookingStatus.Assigned && booking.Status != BookingStatus.InProgress)
         return BadRequest("Booking cannot be referred in its current status.");
 
-    if (dto.AgentId == agentId)
-        return BadRequest("Cannot refer to yourself.");
+    if (booking.IsReferralPendingApproval)
+        return BadRequest("A referral request is already pending admin review for this booking.");
 
-    var other = await _context.Agents.FindAsync(dto.AgentId);
+    if (dto.TargetAgentId == booking.AgentId)
+        return BadRequest("Cannot refer to the same assigned specialist.");
+
+    var other = await _context.Agents.FindAsync(dto.TargetAgentId);
     if (other is null || !other.IsActive)
-        return BadRequest("Target agent not found or inactive.");
+        return BadRequest("Target specialist agent not found or inactive.");
 
-    booking.AgentId = other.Id;
+    if (User.IsInRole("Admin"))
+    {
+        // Admin direct reassignment / transfer without pending approval
+        var handoverContent = $"[Clinical Referral Direct Transfer by Admin]\n" +
+                              $"Transferred to: {other.FullName} ({other.Department})\n" +
+                              $"Reason: {dto.Reason.Trim()}\n" +
+                              (string.IsNullOrWhiteSpace(dto.ClinicalNotes) ? "" : $"Clinical Notes: {dto.ClinicalNotes.Trim()}");
+
+        var handoverNote = new InternalNote
+        {
+            BookingId = booking.Id,
+            AgentId = other.Id,
+            Content = handoverContent.Trim(),
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.InternalNotes.Add(handoverNote);
+
+        booking.AgentId = other.Id;
+        booking.Status = BookingStatus.Assigned;
+        booking.IsReferralPendingApproval = false;
+        booking.ReferredToAgentId = null;
+        booking.ReferralReason = null;
+        booking.ReferralClinicalNotes = null;
+        booking.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        await _context.Entry(booking).Reference(b => b.Agent).LoadAsync();
+
+        await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+            .SendAsync("BookingUpdated", ToDto(booking));
+
+        await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+            .SendAsync("InternalNoteAdded", new InternalNoteDto(
+                handoverNote.Id,
+                handoverNote.BookingId,
+                handoverNote.AgentId,
+                "Admin",
+                handoverNote.Content,
+                handoverNote.CreatedAt));
+
+        var referredUserId = await _notificationService.GetUserIdForAgentAsync(other.Id);
+        if (referredUserId is not null)
+        {
+            await _notificationService.NotifyAsync(
+                referredUserId, "BookingReferred",
+                $"A consultation ({booking.ServiceCategory.Name}) has been transferred to you by Admin. Reason: {dto.Reason}.", booking.Id);
+        }
+
+        var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+        if (patientUserId is not null)
+        {
+            await _notificationService.NotifyAsync(
+                patientUserId, "BookingReferred",
+                $"Your consultation has been transferred to specialist {other.FullName} for further care.", booking.Id);
+        }
+
+        return Ok(ToDto(booking));
+    }
+    else
+    {
+        // Agent clinical referral initiation: Keeps current agent, flags pending admin approval
+        var handoverContent = $"[Clinical Referral Requested - Awaiting Admin Approval]\n" +
+                              $"Referred by: {referringAgentName} -> {other.FullName} ({other.Department})\n" +
+                              $"Reason: {dto.Reason.Trim()}\n" +
+                              (string.IsNullOrWhiteSpace(dto.ClinicalNotes) ? "" : $"Clinical Notes: {dto.ClinicalNotes.Trim()}");
+
+        var handoverNote = new InternalNote
+        {
+            BookingId = booking.Id,
+            AgentId = referringAgentId,
+            Content = handoverContent.Trim(),
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.InternalNotes.Add(handoverNote);
+
+        booking.IsReferralPendingApproval = true;
+        booking.ReferredToAgentId = other.Id;
+        booking.ReferralReason = dto.Reason.Trim();
+        booking.ReferralClinicalNotes = dto.ClinicalNotes?.Trim();
+        booking.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        await _context.Entry(booking).Reference(b => b.ReferredToAgent).LoadAsync();
+
+        await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+            .SendAsync("BookingUpdated", ToDto(booking));
+
+        await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+            .SendAsync("InternalNoteAdded", new InternalNoteDto(
+                handoverNote.Id,
+                handoverNote.BookingId,
+                handoverNote.AgentId,
+                referringAgentName,
+                handoverNote.Content,
+                handoverNote.CreatedAt));
+
+        var admins = await _userManager.GetUsersInRoleAsync("Admin");
+        foreach (var admin in admins)
+        {
+            await _notificationService.NotifyAsync(
+                admin.Id, "ReferralApprovalRequested",
+                $"Referral approval required: Dr. {referringAgentName} requested transfer of consultation #{booking.Id.ToString()[..8]} to Dr. {other.FullName}. Reason: {dto.Reason}.", booking.Id);
+        }
+
+        return Ok(ToDto(booking));
+    }
+}
+
+[Authorize(Roles = "Admin")]
+[HttpPatch("{id:guid}/approve-referral")]
+public async Task<ActionResult<BookingDto>> ApproveReferral(Guid id)
+{
+    var booking = await LoadBooking(id);
+    if (booking is null) return NotFound();
+
+    if (!booking.IsReferralPendingApproval || !booking.ReferredToAgentId.HasValue)
+        return BadRequest("There is no pending referral request for this booking.");
+
+    var targetAgent = await _context.Agents.FindAsync(booking.ReferredToAgentId.Value);
+    if (targetAgent is null || !targetAgent.IsActive)
+        return BadRequest("Target specialist is not available or inactive.");
+
+    var referringAgentName = booking.Agent?.FullName ?? "Previous Specialist";
+    var newAgentId = targetAgent.Id;
+
+    booking.AgentId = newAgentId;
     booking.Status = BookingStatus.Assigned;
+    booking.IsReferralPendingApproval = false;
+    var handoverReason = booking.ReferralReason;
+    booking.ReferredToAgentId = null;
+    booking.ReferralReason = null;
+    booking.ReferralClinicalNotes = null;
     booking.UpdatedAt = DateTime.UtcNow;
-    await _context.SaveChangesAsync();
 
+    var approvalNote = new InternalNote
+    {
+        BookingId = booking.Id,
+        AgentId = newAgentId,
+        Content = $"[Clinical Referral Approved by Admin]\nCase approved and transferred from {referringAgentName} to Dr. {targetAgent.FullName} ({targetAgent.Department}).",
+        CreatedAt = DateTime.UtcNow
+    };
+    _context.InternalNotes.Add(approvalNote);
+
+    await _context.SaveChangesAsync();
     await _context.Entry(booking).Reference(b => b.Agent).LoadAsync();
 
     await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
         .SendAsync("BookingUpdated", ToDto(booking));
 
-    var referredUserId = await _notificationService.GetUserIdForAgentAsync(other.Id);
-    if (referredUserId is not null)
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("InternalNoteAdded", new InternalNoteDto(
+            approvalNote.Id,
+            approvalNote.BookingId,
+            approvalNote.AgentId,
+            "Admin",
+            approvalNote.Content,
+            approvalNote.CreatedAt));
+
+    var targetUserId = await _notificationService.GetUserIdForAgentAsync(targetAgent.Id);
+    if (targetUserId is not null)
     {
         await _notificationService.NotifyAsync(
-            referredUserId, "BookingReferred",
-            "A booking has been referred to you.", booking.Id);
+            targetUserId, "BookingAssigned",
+            $"Referral approved: You have been assigned consultation for {booking.Patient.FullName} ({booking.ServiceCategory.Name}). Reason: {handoverReason}.", booking.Id);
+    }
+
+    var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+    if (patientUserId is not null)
+    {
+        await _notificationService.NotifyAsync(
+            patientUserId, "BookingReferred",
+            $"Your consultation has been transferred to specialist Dr. {targetAgent.FullName} following clinical review.", booking.Id);
+    }
+
+    return Ok(ToDto(booking));
+}
+
+[Authorize(Roles = "Admin")]
+[HttpPatch("{id:guid}/reject-referral")]
+public async Task<ActionResult<BookingDto>> RejectReferral(Guid id, [FromBody] RejectReferralDto? dto)
+{
+    var booking = await LoadBooking(id);
+    if (booking is null) return NotFound();
+
+    if (!booking.IsReferralPendingApproval)
+        return BadRequest("There is no pending referral request for this booking.");
+
+    var referringAgentId = booking.AgentId;
+    var targetAgentName = booking.ReferredToAgent?.FullName ?? "Proposed Specialist";
+    var rejectReason = string.IsNullOrWhiteSpace(dto?.Reason) ? "Administrative clinical discretion" : dto.Reason.Trim();
+
+    booking.IsReferralPendingApproval = false;
+    booking.ReferredToAgentId = null;
+    booking.ReferralReason = null;
+    booking.ReferralClinicalNotes = null;
+    booking.UpdatedAt = DateTime.UtcNow;
+
+    var rejectionNote = new InternalNote
+    {
+        BookingId = booking.Id,
+        AgentId = referringAgentId ?? Guid.Empty,
+        Content = $"[Clinical Referral Rejected by Admin]\nReferral to Dr. {targetAgentName} was declined by Admin. Reason: {rejectReason}.",
+        CreatedAt = DateTime.UtcNow
+    };
+    _context.InternalNotes.Add(rejectionNote);
+
+    await _context.SaveChangesAsync();
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("BookingUpdated", ToDto(booking));
+
+    await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+        .SendAsync("InternalNoteAdded", new InternalNoteDto(
+            rejectionNote.Id,
+            rejectionNote.BookingId,
+            rejectionNote.AgentId,
+            "Admin",
+            rejectionNote.Content,
+            rejectionNote.CreatedAt));
+
+    if (referringAgentId.HasValue)
+    {
+        var referringUserId = await _notificationService.GetUserIdForAgentAsync(referringAgentId.Value);
+        if (referringUserId is not null)
+        {
+            await _notificationService.NotifyAsync(
+                referringUserId, "ReferralRejected",
+                $"Your referral request for booking #{booking.Id.ToString()[..8]} was declined by Admin. Reason: {rejectReason}.", booking.Id);
+        }
     }
 
     return Ok(ToDto(booking));
@@ -326,6 +628,7 @@ private async Task<Booking?> LoadBooking(Guid id) =>
         .Include(b => b.Patient)
         .Include(b => b.ServiceCategory)
         .Include(b => b.Agent)
+        .Include(b => b.ReferredToAgent)
         .FirstOrDefaultAsync(b => b.Id == id);
 
 private Guid? GetCurrentAgentId()
@@ -346,14 +649,59 @@ private static BookingDto ToDto(Booking b) => new(
     b.Status,
     b.Amount,
     b.Notes,
-    b.CreatedAt);
+    b.CreatedAt,
+    b.IsReferralPendingApproval,
+    b.ReferredToAgentId,
+    b.ReferredToAgent?.FullName,
+    b.ReferralReason,
+    b.ReferralClinicalNotes);
+
+    [Authorize(Roles = "Agent,Admin")]
+    [HttpPatch("{id:guid}/complete")]
+    public async Task<ActionResult<BookingDto>> Complete(Guid id)
+    {
+        var booking = await LoadBooking(id);
+        if (booking is null) return NotFound();
+
+        if (booking.IsReferralPendingApproval)
+            return BadRequest("Cannot complete consultation while a referral approval is pending.");
+
+        if (User.IsInRole("Agent") && !User.IsInRole("Admin"))
+        {
+            var agentId = GetCurrentAgentId();
+            if (agentId is null || booking.AgentId != agentId)
+                return Forbid();
+        }
+
+        if (booking.Status == BookingStatus.Completed)
+            return Ok(ToDto(booking));
+
+        booking.Status = BookingStatus.Completed;
+        booking.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await _hubContext.Clients.Group(BookingHub.GroupName(booking.Id))
+            .SendAsync("BookingUpdated", ToDto(booking));
+
+        var patientUserId = await _notificationService.GetUserIdForPatientAsync(booking.PatientId);
+        if (patientUserId is not null)
+        {
+            await _notificationService.NotifyAsync(
+                patientUserId, "BookingCompleted",
+                "Your consultation has been completed. Please take a moment to rate and review your care experience.", booking.Id);
+        }
+
+        return Ok(ToDto(booking));
+    }
 
 private static readonly BookingStatus[] AdminAssignableStatuses =
 {
     BookingStatus.PendingPayment,
     BookingStatus.Paid,
     BookingStatus.Assigned,
-    BookingStatus.InProgress
+    BookingStatus.InProgress,
+    BookingStatus.Completed,
+    BookingStatus.Cancelled
 };
 
 [Authorize(Roles = "Admin")]

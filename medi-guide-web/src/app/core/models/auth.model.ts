@@ -9,6 +9,13 @@ export interface RegisterPatientRequest {
   phoneNumber: string;
   password: string;
   preferredLanguage?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  allergies?: string;
+  chronicConditions?: string;
+  currentMedications?: string;
 }
 
 export interface AuthResponse {

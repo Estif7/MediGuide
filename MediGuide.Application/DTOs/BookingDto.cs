@@ -15,7 +15,12 @@ public record BookingDto(
     BookingStatus Status,
     decimal Amount,
     string? Notes,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    bool IsReferralPendingApproval = false,
+    Guid? ReferredToAgentId = null,
+    string? ReferredToAgentName = null,
+    string? ReferralReason = null,
+    string? ReferralClinicalNotes = null
 );
 
 public record CreateBookingDto(
@@ -37,4 +42,19 @@ public record BookingQueryParams(
     string? AgentName = null,
     string SortBy = "CreatedAt",
     string SortDir = "desc"
+);
+
+public record SimulatePaymentDto(
+    string PaymentMethod = "Telebirr",
+    string? TransactionReference = null
+);
+
+public record ReferBookingDto(
+    [Required] Guid TargetAgentId,
+    [Required][StringLength(200)] string Reason,
+    [StringLength(2000)] string? ClinicalNotes = null
+);
+
+public record RejectReferralDto(
+    string? Reason = null
 );

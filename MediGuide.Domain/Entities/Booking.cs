@@ -14,6 +14,13 @@ public class Booking : BaseEntity
     public decimal Amount { get; set; }                // snapshot of price at booking time
     public string? Notes { get; set; }                 // patient notes
 
+    // Clinical Referral Approval by Admin
+    public bool IsReferralPendingApproval { get; set; } = false;
+    public Guid? ReferredToAgentId { get; set; }
+    public Agent? ReferredToAgent { get; set; }
+    public string? ReferralReason { get; set; }
+    public string? ReferralClinicalNotes { get; set; }
+
     // Navigation
     public Patient Patient { get; set; } = null!;
     public ServiceCategory ServiceCategory { get; set; } = null!;

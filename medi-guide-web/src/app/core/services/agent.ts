@@ -8,6 +8,9 @@ export interface AgentDto {
   fullName: string;
   email: string;
   phoneNumber: string;
+  title?: string;
+  department?: string;
+  specialty?: string;
   isAvailable: boolean;
   isActive: boolean;
 }
@@ -23,6 +26,9 @@ export interface AgentQuery {
   page?: number;
   pageSize?: number;
   name?: string;
+  department?: string;
+  specialty?: string;
+  excludeAgentId?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +41,9 @@ export class AgentService {
     if (query.page != null) params = params.set('page', query.page);
     if (query.pageSize != null) params = params.set('pageSize', query.pageSize);
     if (query.name) params = params.set('name', query.name);
+    if (query.department) params = params.set('department', query.department);
+    if (query.specialty) params = params.set('specialty', query.specialty);
+    if (query.excludeAgentId) params = params.set('excludeAgentId', query.excludeAgentId);
 
     return this.http.get<PagedResult<AgentDto>>(`${this.api}/agents`, { params });
   }

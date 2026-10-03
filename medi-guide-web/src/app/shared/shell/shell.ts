@@ -5,12 +5,19 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatListModule } from '@angular/material/list';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DatePipe } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth';
 import { SignalRService } from '../../core/services/signalr';
 import { NotificationService } from '../../core/services/notification';
 import { NotificationDto } from '../../core/models/notification.model';
+import { TranslationService } from '../../core/services/translation';
+import { ThemeService } from '../../core/services/theme';
+import { MatDividerModule } from '@angular/material/divider';
+
+const NOTIF_PAGE_SIZE = 5;
 
 @Component({
   selector: 'app-shell',
@@ -25,7 +32,10 @@ import { NotificationDto } from '../../core/models/notification.model';
     MatBadgeModule,
     MatMenuModule,
     MatListModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
     DatePipe,
+    MatDividerModule,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
@@ -35,7 +45,10 @@ export class Shell implements OnInit, OnDestroy {
   private readonly signalR = inject(SignalRService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
+  readonly i18n = inject(TranslationService);
+  readonly themeService = inject(ThemeService);
 
+  isLoggedIn = this.auth.isLoggedIn;
   user = this.auth.currentUser;
   isPatient = this.auth.isPatient;
   isAgent = this.auth.isAgent;
@@ -44,11 +57,29 @@ export class Shell implements OnInit, OnDestroy {
   notifications = signal<NotificationDto[]>([]);
   unreadCount = signal(0);
 
-  homeLink = computed(() => {
-    if (this.isAdmin()) return '/admin';
-    if (this.isAgent()) return '/agent';
-    return '/patient';
+  notifPage = signal(1);
+  notifTotalCount = signal(0);
+  notifLoadingMore = signal(false);
+  hasMoreNotifications = computed(
+    () => this.notifications().length < this.notifTotalCount()
+  );
+  unreadBadge = computed(
+    () => (this.unreadCount() > 99 ? '99+' : this.unreadCount())
+  );
+
+  homeLink = computed(() => '/');
+
+  userRoleLabel = computed(() => {
+    if (this.isAdmin()) return this.i18n.t('role.admin');
+    if (this.isAgent()) return this.i18n.t('role.agent');
+    return this.i18n.t('role.patient');
   });
+
+  userInitial = computed(() => {
+    const name = this.user()?.fullName?.trim();
+    return name && name.length > 0 ? name.charAt(0).toUpperCase() : 'U';
+  });
+
 
   ngOnInit() {
     if (!this.auth.isLoggedIn()) return;
@@ -58,7 +89,8 @@ export class Shell implements OnInit, OnDestroy {
     this.loadRecent();
 
     this.signalR.onNotificationReceived((notification) => {
-      this.notifications.update((list) => [notification, ...list].slice(0, 20));
+      this.notifications.update((list) => [notification, ...list]);
+      this.notifTotalCount.update((n) => n + 1);
       this.unreadCount.update((n) => n + 1);
     });
   }
@@ -74,9 +106,35 @@ export class Shell implements OnInit, OnDestroy {
   }
 
   loadRecent() {
-    this.notificationService.getAll(1, 20).subscribe({
-      next: (result) => this.notifications.set(result.items),
+    this.notifPage.set(1);
+
+    this.notificationService.getAll(1, NOTIF_PAGE_SIZE).subscribe({
+      next: (result) => {
+        this.notifications.set(result.items);
+        this.notifTotalCount.set(result.totalCount);
+      },
     });
+  }
+
+  loadMoreNotifications() {
+    if (this.notifLoadingMore() || !this.hasMoreNotifications()) return;
+
+    const nextPage = this.notifPage() + 1;
+    this.notifLoadingMore.set(true);
+
+    this.notificationService.getAll(nextPage, NOTIF_PAGE_SIZE).subscribe({
+      next: (result) => {
+        this.notifications.update((list) => [...list, ...result.items]);
+        this.notifTotalCount.set(result.totalCount);
+        this.notifPage.set(nextPage);
+        this.notifLoadingMore.set(false);
+      },
+      error: () => this.notifLoadingMore.set(false),
+    });
+  }
+
+  collapseNotifications() {
+    this.loadRecent();
   }
 
   onNotificationClick(notification: NotificationDto) {
@@ -96,8 +154,6 @@ export class Shell implements OnInit, OnDestroy {
       const url = `${path}/${notification.bookingId}`;
 
       if (this.router.url === url) {
-        // Already on this booking — force the component to reload its data
-        // instead of silently no-op'ing on an identical URL.
         this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
           this.router.navigate([path, notification.bookingId]);
         });

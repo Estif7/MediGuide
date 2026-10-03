@@ -1,0 +1,238 @@
+<div class="register-page">
+  <!-- LEFT / BRANDING PANEL -->
+  <section class="brand-section">
+    <div class="brand-content">
+      <a routerLink="/" class="brand-link auth-brand-link">
+        <div class="brand-emblem-box">
+          <img src="/assets/emblem.png" alt="Medi-Guide Emblem" class="brand-emblem-img" />
+        </div>
+        <div class="brand-text-group">
+          <span class="brand-title" style="color: #ffffff;">MEDI-GUIDE</span>
+          <span class="brand-subtitle" style="color: #38bdf8;">ETHIOPIA</span>
+        </div>
+      </a>
+
+      <div class="brand-message">
+        <span class="eyebrow">{{ i18n.t('hero.eyebrow') }}</span>
+        <h1>
+          {{ i18n.isAmharic() ? 'የተሟላ የጤና እንክብካቤ' : 'Patient-Centered' }}
+          <span>{{ i18n.isAmharic() ? 'ከዚህ ይጀምራል።' : 'Medical Support.' }}</span>
+        </h1>
+        <p>
+          {{ i18n.isAmharic() ? 'ከከፍተኛ ስፔሻሊስቶች እና ታማኝ የባህል ህክምና አዋቂዎች ጋር በቀጥታ ይገናኙ።' : 'Create your secure account to book specialist consultations, submit medical reports, and receive personalized treatment plans.' }}
+        </p>
+      </div>
+
+      <div class="steps-indicator">
+        <div class="step-item" [class.active]="currentStep() === 1" (click)="goToStep1()">
+          <div class="step-circle">1</div>
+          <div class="step-text">
+            <strong>{{ i18n.isAmharic() ? 'የመለያ መረጃ' : 'Account Details' }}</strong>
+            <span>{{ i18n.isAmharic() ? 'ስም፣ ኢሜይል፣ የይለፍ ቃል' : 'Name, email & security' }}</span>
+          </div>
+        </div>
+
+        <div class="step-item" [class.active]="currentStep() === 2" (click)="goToStep2()">
+          <div class="step-circle">2</div>
+          <div class="step-text">
+            <strong>{{ i18n.isAmharic() ? 'የህክምና መረጃ' : 'Medical Profile' }}</strong>
+            <span>{{ i18n.isAmharic() ? 'አስፈላጊ የጤና ሁኔታዎች' : 'Intake & emergency contacts' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="brand-footer">
+      <span>© 2026 Medi-Guide Ethiopia</span>
+      <span>{{ i18n.t('hero.badge.confidential') }}</span>
+    </div>
+  </section>
+
+  <!-- RIGHT / FORM CONTAINER -->
+  <section class="form-section">
+    <div class="register-container">
+      <div class="top-bar">
+        <a routerLink="/" class="brand-link mobile-brand-link">
+          <div class="brand-emblem-box">
+            <img src="/assets/emblem.png" alt="Medi-Guide Emblem" class="brand-emblem-img" />
+          </div>
+          <div class="brand-text-group">
+            <span class="brand-title">MEDI-GUIDE</span>
+            <span class="brand-subtitle">ETHIOPIA</span>
+          </div>
+        </a>
+
+        <div class="top-controls">
+          <button
+            type="button"
+            mat-icon-button
+            class="theme-btn-sm"
+            (click)="themeService.toggleTheme()"
+            [matTooltip]="themeService.isDark() ? i18n.t('theme.light') : i18n.t('theme.dark')"
+          >
+            <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+          </button>
+
+          <button type="button" mat-stroked-button class="lang-toggle-btn" (click)="i18n.toggleLanguage()">
+            <mat-icon>translate</mat-icon>
+            <span>{{ i18n.isAmharic() ? 'English' : 'አማርኛ' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-heading">
+        <h2>{{ currentStep() === 1 ? (i18n.isAmharic() ? 'የታካሚ መለያ ይክፈቱ' : 'Create Patient Account') : (i18n.isAmharic() ? 'የህክምና ሁኔታ መረጃ (አማራጭ)' : 'Clinical Intake Profile (Optional)') }}</h2>
+        <p>{{ currentStep() === 1 ? (i18n.isAmharic() ? 'የግል መረጃዎን ያስገቡ' : 'Step 1 of 2: Basic account credentials') : (i18n.isAmharic() ? 'ደረጃ 2 ከ 2: ለሐኪሞች የሚረዳ የጤና ሁኔታ መረጃ' : 'Step 2 of 2: Helps your assigned specialist provide accurate care') }}</p>
+      </div>
+
+      @if (error()) {
+        <div class="error-message">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <!-- STEP 1: ACCOUNT FORM -->
+      @if (currentStep() === 1) {
+        <form [formGroup]="accountForm" (ngSubmit)="goToStep2()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ i18n.isAmharic() ? 'ሙሉ ስም' : 'Full Name' }}</mat-label>
+            <mat-icon matPrefix>person_outline</mat-icon>
+            <input matInput formControlName="fullName" placeholder="e.g. Abeba Kebede" />
+            @if (accountForm.controls.fullName.hasError('required') && accountForm.controls.fullName.touched) {
+              <mat-error>{{ i18n.isAmharic() ? 'ስም ማስገባት ግዴታ ነው' : 'Full name is required' }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ i18n.isAmharic() ? 'ኢሜይል' : 'Email Address' }}</mat-label>
+            <mat-icon matPrefix>mail_outline</mat-icon>
+            <input matInput type="email" formControlName="email" placeholder="you@example.com" />
+            @if (accountForm.controls.email.hasError('required') && accountForm.controls.email.touched) {
+              <mat-error>{{ i18n.isAmharic() ? 'ኢሜይል ማስገባት ግዴታ ነው' : 'Email is required' }}</mat-error>
+            }
+            @if (accountForm.controls.email.hasError('email')) {
+              <mat-error>{{ i18n.isAmharic() ? 'ትክክለኛ ኢሜይል ያስገቡ' : 'Enter a valid email' }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ i18n.isAmharic() ? 'ስልክ ቁጥር' : 'Phone Number' }}</mat-label>
+            <mat-icon matPrefix>phone</mat-icon>
+            <input matInput formControlName="phoneNumber" placeholder="+251 9..." />
+            @if (accountForm.controls.phoneNumber.hasError('required') && accountForm.controls.phoneNumber.touched) {
+              <mat-error>{{ i18n.isAmharic() ? 'ስልክ ቁጥር ማስገባት ግዴታ ነው' : 'Phone number is required' }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ i18n.isAmharic() ? 'የይለፍ ቃል (ቢያንስ 8 ፊደላት)' : 'Password (min. 8 characters)' }}</mat-label>
+            <mat-icon matPrefix>lock_outline</mat-icon>
+            <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password" />
+            <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())">
+              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (accountForm.controls.password.hasError('required') && accountForm.controls.password.touched) {
+              <mat-error>{{ i18n.isAmharic() ? 'የይለፍ ቃል ያስፈልጋል' : 'Password is required' }}</mat-error>
+            }
+            @if (accountForm.controls.password.hasError('minlength')) {
+              <mat-error>{{ i18n.isAmharic() ? 'ቢያንስ 8 ፊደላት መሆን አለበት' : 'Minimum 8 characters' }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ i18n.isAmharic() ? 'ተመራጭ ቋንቋ' : 'Preferred Language' }}</mat-label>
+            <mat-icon matPrefix>language</mat-icon>
+            <mat-select formControlName="preferredLanguage">
+              <mat-option value="en">English</mat-option>
+              <mat-option value="am">አማርኛ (Amharic)</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button mat-flat-button class="submit-btn" type="submit" [disabled]="accountForm.invalid">
+            <span>{{ i18n.isAmharic() ? 'ቀጥል ወደ ህክምና መረጃ' : 'Next: Medical Intake (Optional)' }}</span>
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </form>
+      }
+
+      <!-- STEP 2: CLINICAL INTAKE FORM -->
+      @if (currentStep() === 2) {
+        <form [formGroup]="clinicalForm" (ngSubmit)="submit()">
+          <div class="row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.isAmharic() ? 'የትውልድ ቀን' : 'Date of Birth' }}</mat-label>
+              <input matInput type="date" formControlName="dateOfBirth" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.isAmharic() ? 'ፆታ' : 'Gender' }}</mat-label>
+              <mat-select formControlName="gender">
+                <mat-option value="Female">{{ i18n.isAmharic() ? 'ሴት' : 'Female' }}</mat-option>
+                <mat-option value="Male">{{ i18n.isAmharic() ? 'ወንድ' : 'Male' }}</mat-option>
+                <mat-option value="Other">{{ i18n.isAmharic() ? 'ሌላ' : 'Other' }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.isAmharic() ? 'የአደጋ ጊዜ ተጠሪ ስም' : 'Emergency Contact Name' }}</mat-label>
+              <input matInput formControlName="emergencyContactName" placeholder="e.g. Spouse / Relative" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ i18n.isAmharic() ? 'የአደጋ ጊዜ ተጠሪ ስልክ' : 'Emergency Contact Phone' }}</mat-label>
+              <input matInput formControlName="emergencyContactPhone" placeholder="+251 9..." />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ i18n.isAmharic() ? 'የአለርጂ ሁኔታዎች (ካለ)' : 'Known Allergies (if any)' }}</mat-label>
+            <input matInput formControlName="allergies" placeholder="e.g. Penicillin, Peanuts" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ i18n.isAmharic() ? 'የቆዩ የጤና እክሎች (ካለ)' : 'Chronic Conditions (if any)' }}</mat-label>
+            <input matInput formControlName="chronicConditions" placeholder="e.g. Hypertension, Diabetes, Asthma" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ i18n.isAmharic() ? 'በአሁኑ ሰዓት የሚወስዷቸው መድኃኒቶች' : 'Current Medications' }}</mat-label>
+            <input matInput formControlName="currentMedications" placeholder="e.g. Metformin 500mg" />
+          </mat-form-field>
+
+          <div class="button-group">
+            <button mat-stroked-button type="button" (click)="goToStep1()">
+              <mat-icon>arrow_back</mat-icon>
+              <span>{{ i18n.isAmharic() ? 'ተመለስ' : 'Back' }}</span>
+            </button>
+
+            <button mat-flat-button class="submit-btn" type="submit" [disabled]="loading()">
+              @if (loading()) {
+                <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+                <span>{{ i18n.isAmharic() ? 'በመመዝገብ ላይ...' : 'Creating Account...' }}</span>
+              } @else {
+                <ng-container>
+                  <span>{{ i18n.isAmharic() ? 'ምዝገባውን አጠናቅቅ' : 'Complete Registration' }}</span>
+                  <mat-icon>check</mat-icon>
+                </ng-container>
+              }
+            </button>
+          </div>
+        </form>
+      }
+
+      <div class="login-link-section">
+        <span>{{ i18n.isAmharic() ? 'መለያ አለዎት?' : 'Already have an account?' }}</span>
+        <a routerLink="/login">{{ i18n.isAmharic() ? 'ይግቡ' : 'Sign in here' }}</a>
+      </div>
+
+      <div class="back-home-section" style="text-align: center; margin-top: 16px;">
+        <a routerLink="/" style="color: var(--app-text-muted); font-size: 13px; text-decoration: none;">
+          ← {{ i18n.t('auth.backToHome') }}
+        </a>
+      </div>
+    </div>
+  </section>
+</div>

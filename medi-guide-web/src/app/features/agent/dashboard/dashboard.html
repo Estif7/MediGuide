@@ -1,46 +1,190 @@
-<div class="page">
-  <mat-card appearance="outlined" class="hero-card">
-    <mat-card-content>
-      <div class="hero-title-row">
-        <div>
-          <p>Welcome Agent, {{ user()?.fullName }}</p>
+<div class="agent-page">
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- Welcome -->
+    <section class="welcome-section">
+      <div>
+        <span class="section-eyebrow">{{ i18n.isAmharic() ? 'የባለሙያ ፖርታል' : 'HEALTHCARE PROFESSIONAL PORTAL' }}</span>
+        <h2>{{ i18n.t('patient.welcome') }}, {{ user()?.fullName }}</h2>
+        <p>
+          {{ i18n.isAmharic() ? 'የአሁኑ የህክምና ድጋፍ ስራዎችዎ አጠቃላይ እይታ።' : 'Here\'s an overview of your current healthcare support workload.' }}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="availability-badge"
+        [class.is-active]="isAvailable()"
+        [class.is-inactive]="!isAvailable()"
+        (click)="toggleAvailability()"
+        [disabled]="updatingAvailability()"
+        [matTooltip]="isAvailable() ? (i18n.isAmharic() ? 'ሁኔታውን ወደ ስራ ላይ / እረፍት ለመቀየር ይጫኑ' : 'Click to set Inactive / Busy') : (i18n.isAmharic() ? 'ሁኔታውን ወደ ንቁ ለመቀየር ይጫኑ' : 'Click to set Active / Accepting Consultations')"
+      >
+        <span class="status-dot"></span>
+        <span class="badge-label">{{ isAvailable() ? (i18n.isAmharic() ? 'ንቁ (ክፍት)' : 'Active') : (i18n.isAmharic() ? 'ስራ ላይ / እረፍት' : 'Inactive') }}</span>
+        @if (updatingAvailability()) {
+          <mat-progress-spinner diameter="13" mode="indeterminate"></mat-progress-spinner>
+        }
+      </button>
+    </section>
+
+
+    <!-- Stats -->
+    <section class="stats-grid">
+
+      <div class="stat-card">
+        <div class="stat-icon">
+          <mat-icon>event_note</mat-icon>
+        </div>
+
+        <div class="stat-info">
+          <span class="stat-label">{{ i18n.isAmharic() ? 'ክፍት ጥያቄዎች' : 'Open Bookings' }}</span>
+          <strong>{{ bookings().length }}</strong>
+          <span class="stat-description">{{ i18n.isAmharic() ? 'ክትትል የሚሹ ጥያቄዎች' : 'Requests requiring attention' }}</span>
         </div>
       </div>
-    </mat-card-content>
-  </mat-card>
 
-  @if (message()) {
-    <div class="message">{{ message() }}</div>
-  }
+      <div class="stat-card">
+        <div class="stat-icon" [class.is-inactive]="!isAvailable()">
+          <mat-icon>{{ isAvailable() ? 'medical_services' : 'pause_circle_outline' }}</mat-icon>
+        </div>
 
-  <div class="summary-grid">
-    <mat-card appearance="outlined">
-      <mat-card-title>Open bookings</mat-card-title>
-      <mat-card-content>
-        <strong>{{ bookings().length }}</strong>
-      </mat-card-content>
-    </mat-card>
-  </div>
+        <div class="stat-info">
+          <span class="stat-label">{{ i18n.isAmharic() ? 'የምክክር ዝግጁነት' : 'Intake Availability' }}</span>
+          <strong>{{ isAvailable() ? (i18n.isAmharic() ? 'ንቁ (ክፍት)' : 'Active') : (i18n.isAmharic() ? 'ስራ ላይ / እረፍት' : 'Inactive') }}</strong>
+          <span class="stat-description">
+            {{ isAvailable() ? (i18n.isAmharic() ? 'አዳዲስ ታካሚዎችን ለመቀበል ዝግጁ ነዎት' : 'Accepting new consultations') : (i18n.isAmharic() ? 'በአሁኑ ሰዓት አዳዲስ ጥያቄዎች አይቀበሉም' : 'Currently not taking new requests') }}
+          </span>
+        </div>
+      </div>
 
-  <mat-card appearance="outlined" class="list-card">
-    <mat-card-header>
-      <mat-card-title>Bookings</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      @if (bookings().length === 0) {
-        <p class="empty-state">No bookings yet.</p>
-      } @else {
-        <mat-list>
-          @for (b of bookings(); track b.id) {
-            <a class="list-item-link" [routerLink]="['/agent/bookings', b.id]">
-              <mat-list-item>
-                <span matListItemTitle>{{ b.categoryName }} · {{ b.patientName }}</span>
-                <span matListItemLine>{{ statusLabel(b.status) }} @if (b.agentName) { · Agent: {{ b.agentName }} }</span>
-              </mat-list-item>
-            </a>
-          }
-        </mat-list>
-      }
-    </mat-card-content>
-  </mat-card>
+    </section>
+
+
+    <!-- Bookings -->
+    <section class="bookings-card">
+
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="section-icon">
+            <mat-icon>assignment</mat-icon>
+          </div>
+
+          <div>
+            <h2>{{ i18n.isAmharic() ? 'የምክክር ጥያቄዎች' : 'Booking Requests' }}</h2>
+            <p>{{ i18n.isAmharic() ? 'የህክምና ምክክር ጥያቄዎችን ይመልከቱ እና ያስተዳድሩ።' : 'Review and manage healthcare support requests.' }}</p>
+          </div>
+        </div>
+
+        <div class="booking-count">
+          {{ bookings().length }} {{ i18n.isAmharic() ? 'ጥያቄዎች' : (bookings().length === 1 ? 'request' : 'requests') }}
+        </div>
+      </div>
+
+
+      <div class="card-content">
+
+        <app-state-panel
+          [loading]="bookingsLoading()"
+          [error]="bookingsError()"
+          [empty]="bookings().length === 0"
+          [emptyMessage]="i18n.isAmharic() ? 'ምንም የሚገኝ የምክክር ጥያቄ የለም።' : 'There are no booking requests available.'"
+          emptyIcon="event_busy"
+          [retry]="loadBookings.bind(this)"
+        >
+
+          <div class="booking-list">
+
+            @for (b of bookings(); track b.id) {
+
+              <a
+                class="booking-row"
+                [routerLink]="['/agent/bookings', b.id]"
+              >
+
+                <div class="booking-icon">
+                  <mat-icon>medical_services</mat-icon>
+                </div>
+
+                <div class="booking-main">
+
+                  <div class="booking-title">
+                    <strong>{{ b.categoryName }}</strong>
+
+                    <span
+                      class="status-badge"
+                      [attr.data-status]="b.status"
+                    >
+                      {{ statusLabel(b.status) }}
+                    </span>
+                  </div>
+
+                  <div class="booking-details">
+
+                    <span>
+                      <mat-icon>person_outline</mat-icon>
+                      {{ b.patientName }}
+                    </span>
+
+                    @if (b.agentName) {
+                      <span>
+                        <mat-icon>support_agent</mat-icon>
+                        {{ b.agentName }}
+                      </span>
+                    } @else {
+                      <span class="unassigned">
+                        <mat-icon>person_off</mat-icon>
+                        {{ i18n.isAmharic() ? 'አልተመደበም' : 'Unassigned' }}
+                      </span>
+                    }
+
+                  </div>
+
+                </div>
+
+                <div class="booking-side">
+
+                  <strong class="booking-amount">
+                    {{ b.amount }} ETB
+                  </strong>
+
+                  <mat-icon class="chevron">
+                    chevron_right
+                  </mat-icon>
+
+                </div>
+
+              </a>
+
+            }
+
+          </div>
+
+        </app-state-panel>
+
+      </div>
+
+    </section>
+
+
+    <!-- Information notice -->
+    <section class="agent-notice">
+
+      <div class="notice-icon">
+        <mat-icon>verified_user</mat-icon>
+      </div>
+
+      <div>
+        <strong>{{ i18n.isAmharic() ? 'የህክምና ድጋፍ አሰራር ደንብ' : 'Healthcare Support Operations' }}</strong>
+        <p>
+          {{ i18n.isAmharic() ? 'እያንዳንዱን ጥያቄ በጥንቃቄ ይመልከቱ እና የታካሚውን መረጃ በሚስጥር ይጠብቁ። የተሟላ መረጃ ለማየት የምክክር ጥያቄውን ይክፈቱ።' : 'Review each request carefully and keep patient information confidential. Select a booking to view its complete details.' }}
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
 </div>

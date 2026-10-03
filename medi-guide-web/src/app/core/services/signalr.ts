@@ -449,6 +449,16 @@ offDocumentUploaded(): void {
   this.hubConnection?.off('DocumentUploaded', this.currentDocumentUploadedHandler);
   this.currentDocumentUploadedHandler = undefined;
 }
+
+  onInternalNoteAdded(callback: (note: any) => void): void {
+    this.hubConnection?.on('InternalNoteAdded', (note: any) => {
+      this.ngZone.run(() => callback(note));
+    });
+  }
+
+  offInternalNoteAdded(): void {
+    this.hubConnection?.off('InternalNoteAdded');
+  }
   /**
    * Stop the SignalR connection and clear all local state.
    */

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { Booking, BookingQuery, BookingStatus, CreateBookingRequest, PagedResult } from '../models/booking.model';
+import { Booking, BookingQuery, BookingStatus, CreateBookingRequest, PagedResult, ReferBookingRequest, SimulatePaymentRequest } from '../models/booking.model';
 
 @Injectable({ providedIn: 'root' })
 export class BookingService {
@@ -29,6 +29,10 @@ export class BookingService {
     return this.http.get<Booking>(`${this.api}/bookings/${id}`);
   }
 
+  simulatePayment(id: string, dto: SimulatePaymentRequest = {}) {
+    return this.http.post<Booking>(`${this.api}/bookings/${id}/simulate-payment`, dto);
+  }
+
   assignAgent(bookingId: string, agentId: string) {
     return this.http.patch<Booking>(`${this.api}/bookings/${bookingId}/assign`, { agentId });
   }
@@ -41,9 +45,22 @@ export class BookingService {
     return this.http.patch<Booking>(`${this.api}/bookings/${id}/decline`, {});
   }
 
-  refer(id: string, agentId: string) {
-    return this.http.patch<Booking>(`${this.api}/bookings/${id}/refer`, { agentId });
+  complete(id: string) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${id}/complete`, {});
   }
+
+  refer(id: string, dto: ReferBookingRequest) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${id}/refer`, dto);
+  }
+
+  approveReferral(id: string) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${id}/approve-referral`, {});
+  }
+
+  rejectReferral(id: string, reason?: string) {
+    return this.http.patch<Booking>(`${this.api}/bookings/${id}/reject-referral`, { reason });
+  }
+
 
   updateBookingStatus(id: string, status: BookingStatus) {
     return this.http.patch<Booking>(`${this.api}/bookings/${id}/booking-status`, { status });

@@ -1,0 +1,292 @@
+<div class="about-page">
+  <!-- PUBLIC NAVBAR -->
+  <header class="public-navbar">
+    <div class="nav-container">
+      <a routerLink="/" class="brand-capsule">
+        <div class="brand-emblem-badge">
+          <img src="/assets/emblem.png" alt="Medi-Guide Emblem" class="emblem-img" />
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">MEDI-GUIDE</span>
+          <span class="brand-sub">ETHIOPIA</span>
+        </div>
+      </a>
+
+      <!-- Ordered: About Us - Services - How It Works - Contact Us -->
+      <nav class="desktop-nav">
+        <a routerLink="/about" class="nav-link active">{{ i18n.t('nav.about') }}</a>
+        <a routerLink="/" fragment="services" class="nav-link">{{ i18n.t('nav.services') }}</a>
+        <a routerLink="/" fragment="how-it-works" class="nav-link">{{ i18n.t('nav.howItWorks') }}</a>
+        <a routerLink="/contact" class="nav-link">{{ i18n.t('nav.contact') }}</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button
+          type="button"
+          mat-icon-button
+          class="theme-btn"
+          (click)="themeService.toggleTheme()"
+          [matTooltip]="themeService.isDark() ? i18n.t('theme.light') : i18n.t('theme.dark')"
+          aria-label="Toggle theme"
+        >
+          <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+
+        <button type="button" mat-stroked-button class="lang-btn" (click)="i18n.toggleLanguage()" aria-label="Toggle language">
+          <mat-icon>translate</mat-icon>
+          <span>{{ i18n.isAmharic() ? 'English' : 'አማርኛ' }}</span>
+        </button>
+
+        @if (isLoggedIn()) {
+          <a [routerLink]="getDashboardLink()" mat-flat-button class="cta-pill">
+            <mat-icon>dashboard</mat-icon>
+            <span>{{ i18n.t('nav.dashboard') }}</span>
+          </a>
+        } @else {
+          <a routerLink="/login" mat-button class="login-btn">
+            <span>{{ i18n.t('nav.signIn') }}</span>
+          </a>
+          <a routerLink="/register" mat-flat-button class="cta-pill">
+            <span>{{ i18n.isAmharic() ? 'ምክክር ይጠይቁ' : 'Consult Now' }}</span>
+          </a>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO BANNER -->
+  <section class="about-hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-container">
+      <span class="hero-tag">
+        <mat-icon>verified</mat-icon>
+        {{ i18n.isAmharic() ? 'ስለ ሜዲ-ጋይድ ኢትዮጵያ' : 'ABOUT MEDI-GUIDE ETHIOPIA' }}
+      </span>
+      <h1>
+        {{ i18n.isAmharic()
+          ? 'የታካሚውን ጤናና ፍላጎት ቅድሚያ የሚሰጥ ገለልተኛ የህክምና ድጋፍ መድረክ'
+          : 'Patient-First Healthcare Navigation with Absolute Clinical Independence' }}
+      </h1>
+      <p class="hero-subtext">
+        {{ i18n.isAmharic()
+          ? 'በኢትዮጵያ ውስጥ እና በዲያስፖራው የሚገኙ ወገኖቻችንን ከተረጋገጡ ስፔሻሊስቶች፣ ፈቃድ ካላቸው ባህላዊ አዋቂዎች እና የህክምና አስተባባሪዎች ጋር እናገናኛለን።'
+          : 'Connecting Ethiopian families locally and globally with verified medical specialists, FMHACA-licensed practitioners, and dedicated care logistics.' }}
+      </p>
+    </div>
+  </section>
+
+  <!-- MISSION & STORY -->
+  <section class="story-section">
+    <div class="content-container">
+      <div class="story-grid">
+        <div class="story-card">
+          <div class="card-icon-wrap">
+            <mat-icon>health_and_safety</mat-icon>
+          </div>
+          <h2>{{ i18n.isAmharic() ? 'የመድረኩ ዓላማና ራዕይ' : 'Our Mission & Story' }}</h2>
+          <p>
+            {{ i18n.isAmharic()
+              ? 'ሜዲ-ጋይድ የተመሰረተው በኢትዮጵያ ውስጥ ያለውን የተበታተነ የህክምና ፍለጋ እና አስተማማኝ መረጃ እጦት ለመቅረፍ ነው። ብዙ ጊዜ ታካሚዎች እና ቤተሰቦቻቸው ተስማሚ ሐኪም ወይም ሆስፒታል ለማግኘት፣ የህክምና ወጪዎችን ለመገመት፣ እንዲሁም ጥራት ያለው ሁለተኛ የህክምና አስተያየት (Second Opinion) ለማግኘት ይቸገራሉ።'
+              : 'Medi-Guide was founded to resolve the fragmentation and uncertainty in Ethiopia’s healthcare journey. Patients and their families frequently struggle to identify the right medical specialist, forecast diagnostic and surgical expenses, or secure objective second opinions.' }}
+          </p>
+          <p>
+            {{ i18n.isAmharic()
+              ? 'መድረካችን የታካሚውን ጤና ብቻ በማስቀደም፣ ከየትኛውም የግል ወይም የመንግስት ሆስፒታል ጥቅም ገለልተኛ በሆነ መንገድ ሙያዊ መመሪያ ይሰጣል።'
+              : 'Our platform acts strictly as an uncompromised, patient-first advocate. We maintain complete independence from commercial hospital chains and clinic affiliations, guaranteeing objective recommendations.' }}
+          </p>
+        </div>
+
+        <div class="story-highlight-card">
+          <h3>{{ i18n.isAmharic() ? 'ቁልፍ የቁርጠኝነት መርሆዎች' : 'Core Principles of Care' }}</h3>
+          <ul class="principles-list">
+            <li>
+              <div class="principle-icon"><mat-icon>gavel</mat-icon></div>
+              <div>
+                <strong>{{ i18n.isAmharic() ? '100% ገለልተኛ የህክምና ምክክር' : 'Unbiased Medical Navigation' }}</strong>
+                <span>{{ i18n.isAmharic() ? 'የምንሰጠው መመሪያ በታካሚው ክሊኒካል ፍላጎት ላይ ብቻ የተመሰረተ ነው።' : 'Free from commercial referral quotas or clinic ownership conflicts.' }}</span>
+              </div>
+            </li>
+            <li>
+              <div class="principle-icon"><mat-icon>verified_user</mat-icon></div>
+              <div>
+                <strong>{{ i18n.isAmharic() ? 'ህጋዊ ፈቃድ ያላቸው ባለሙያዎች' : 'Verified Clinical Credentials' }}</strong>
+                <span>{{ i18n.isAmharic() ? 'በጤና ሚኒስቴርና በኤፍኤምኤችኤሲኤ (FMHACA) የተረጋገጡ ሐኪሞች።' : 'Every physician, therapist, and traditional healer is thoroughly authenticated.' }}</span>
+              </div>
+            </li>
+            <li>
+              <div class="principle-icon"><mat-icon>public</mat-icon></div>
+              <div>
+                <strong>{{ i18n.isAmharic() ? 'የዲያስፖራው ማህበረሰብ ድልድይ' : 'Diaspora Family Bridge' }}</strong>
+                <span>{{ i18n.isAmharic() ? 'በውጭ ሀገር የሚኖሩ ቤተሰቦች ለወዳጅ ዘመዶቻቸው ህክምና በቀላሉ እንዲያስተባብሩ።' : 'Coordinating medical intake, hospital admissions, and equipment for loved ones back home.' }}</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 PILLARS -->
+  <section class="pillars-section">
+    <div class="content-container">
+      <div class="section-title-wrap">
+        <span class="sub-badge">{{ i18n.isAmharic() ? 'የስራችን መሰረቶች' : 'PILLARS OF EXCELLENCE' }}</span>
+        <h2>{{ i18n.isAmharic() ? 'በሜዲ-ጋይድ የምንመራባቸው 4 ዋና ዋና እሴቶች' : 'How We Transform Healthcare Navigation' }}</h2>
+      </div>
+
+      <div class="pillars-grid">
+        <div class="pillar-box">
+          <div class="pillar-num">01</div>
+          <div class="pillar-icon"><mat-icon>psychology</mat-icon></div>
+          <h3>{{ i18n.isAmharic() ? 'የስፔሻሊስቶች ሁለተኛ አስተያየት' : 'Specialist Second Opinions' }}</h3>
+          <p>{{ i18n.isAmharic() ? 'አስቸጋሪ የጤና እክሎችን ልምድ ካላቸው ከፍተኛ ስፔሻሊስቶች ጋር በማገናኘት ግልጽ መፍትሄ መስጠት።' : 'Independent diagnostic review and treatment verification from leading Ethiopian and international physicians.' }}</p>
+        </div>
+
+        <div class="pillar-box">
+          <div class="pillar-num">02</div>
+          <div class="pillar-icon"><mat-icon>eco</mat-icon></div>
+          <h3>{{ i18n.isAmharic() ? 'ህጋዊ የባህል ህክምና ቅንጅት' : 'FMHACA Traditional Healing' }}</h3>
+          <p>{{ i18n.isAmharic() ? 'ፈቃድ ያላቸውን የሀገር በቀል ባህላዊ ህክምና አዋቂዎች ከዘመናዊው ስርዓት ጋር በማስማማት ማቅረብ።' : 'Structured, safe access to vetted indigenous Ethiopian traditional medicine practitioners.' }}</p>
+        </div>
+
+        <div class="pillar-box">
+          <div class="pillar-num">03</div>
+          <div class="pillar-icon"><mat-icon>flight_takeoff</mat-icon></div>
+          <h3>{{ i18n.isAmharic() ? 'የህክምና ጉዞና መስተንግዶ' : 'Medical Travel & Care Coordination' }}</h3>
+          <p>{{ i18n.isAmharic() ? 'ከክልሎች ወደ አዲስ አበባ ወይም ለውጭ ሀገር ህክምና የተሟላ የጉዞ፣ የሰነድና የክሊኒክ ዝግጅት።' : 'Turnkey logistical assistance for inter-city hospital transfers, accommodation, and documentation.' }}</p>
+        </div>
+
+        <div class="pillar-box">
+          <div class="pillar-num">04</div>
+          <div class="pillar-icon"><mat-icon>lock</mat-icon></div>
+          <h3>{{ i18n.isAmharic() ? 'የታካሚ ውሂብ ጥበቃ' : 'Uncompromising Privacy' }}</h3>
+          <p>{{ i18n.isAmharic() ? 'የታካሚዎች የጤና ታሪክ፣ ሪፖርቶችና የውይይት መልዕክቶች በከፍተኛ ምስጢራዊነት የተጠበቁ ናቸው።' : 'End-to-end encrypted medical record exchange adhering to Ethiopian health data protection guidelines.' }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- METRICS STRIP -->
+  <section class="metrics-section">
+    <div class="content-container">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="metric-val">1,500+</span>
+          <span class="metric-label">{{ i18n.isAmharic() ? 'የተመሩ ታካሚዎች' : 'Patients Guided' }}</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-val">15+</span>
+          <span class="metric-label">{{ i18n.isAmharic() ? 'የህክምና ዘርፎች' : 'Medical Specialties' }}</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-val">99.4%</span>
+          <span class="metric-label">{{ i18n.isAmharic() ? 'የእርካታ መጠን' : 'Satisfaction Rate' }}</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-val">&lt; 2h</span>
+          <span class="metric-label">{{ i18n.isAmharic() ? 'የቅድሚያ ምላሽ ፍጥነት' : 'Priority Turnaround' }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <section class="cta-banner-section">
+    <div class="content-container">
+      <div class="cta-inner">
+        <div>
+          <h2>{{ i18n.isAmharic() ? 'የህክምና ምክክርዎን ዛሬ ይጀምሩ' : 'Start Your Healthcare Consultation Today' }}</h2>
+          <p>{{ i18n.isAmharic() ? 'በቀላሉ ይመዝገቡ፣ ፍላጎትዎን ያስገቡ፤ ባለሙያዎቻችን በፈጣን ምላሽ ዝግጁ ናቸው።' : 'Create an account in minutes and connect directly with verified medical specialists.' }}</p>
+        </div>
+        <div class="cta-buttons">
+          <a routerLink="/register" mat-flat-button class="cta-btn-white">
+            <span>{{ i18n.isAmharic() ? 'ምክክር ይጠይቁ' : 'Consult Now' }}</span>
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+          <a routerLink="/contact" mat-stroked-button class="cta-btn-outline">
+            <span>{{ i18n.t('nav.contact') }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a routerLink="/" class="brand-capsule footer-brand-lockup">
+            <div class="brand-emblem-badge">
+              <img src="/assets/emblem.png" alt="Medi-Guide Emblem" class="emblem-img" />
+            </div>
+            <div class="brand-text">
+              <span class="brand-title" style="color: #ffffff;">MEDI-GUIDE</span>
+              <span class="brand-sub" style="color: #38bdf8;">ETHIOPIA</span>
+            </div>
+          </a>
+          <p class="brand-desc">
+            {{ i18n.isAmharic()
+              ? 'ለኢትዮጵያውያንና ለዲያስፖራው ማህበረሰብ የተሟላ፣ ገለልተኛ እና አስተማማኝ የጤና ድጋፍና እንክብካቤ ማስተባበሪያ መድረክ።'
+              : 'Independent, patient-centered healthcare navigation platform connecting Ethiopian and diaspora families with verified specialists.' }}
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h4>{{ i18n.isAmharic() ? 'አገልግሎቶች' : 'Navigation' }}</h4>
+          <a routerLink="/about">{{ i18n.t('nav.about') }}</a>
+          <a routerLink="/" fragment="services">{{ i18n.t('nav.services') }}</a>
+          <a routerLink="/" fragment="how-it-works">{{ i18n.t('nav.howItWorks') }}</a>
+          <a routerLink="/contact">{{ i18n.t('nav.contact') }}</a>
+        </div>
+
+        <div class="footer-links">
+          <h4>{{ i18n.isAmharic() ? 'የታካሚ ፖርታል' : 'Patient Portal' }}</h4>
+          <a routerLink="/login">{{ i18n.t('nav.signIn') }}</a>
+          <a routerLink="/register">{{ i18n.t('nav.register') }}</a>
+          @if (isLoggedIn()) {
+            <a [routerLink]="getDashboardLink()">{{ i18n.t('nav.dashboard') }}</a>
+          }
+        </div>
+
+        <div class="footer-ethics">
+          <h4>{{ i18n.isAmharic() ? 'ህጋዊና ስነ-ምግባራዊ ተገዢነት' : 'Ethics & Compliance' }}</h4>
+          <p>
+            {{ i18n.isAmharic()
+              ? 'የታካሚዎች መረጃ በኢትዮጵያ የጤና እና የውሂብ ጥበቃ ደንቦች መሰረት በጥብቅ ሚስጥር የተጠበቀ ነው። ሜዲ-ጋይድ ገለልተኛ የምክክር እና የቅንጅት አገልግሎት ብቻ ይሰጣል።'
+              : 'Operates in accordance with Ethiopian Ministry of Health and FMHACA regulatory frameworks. Medi-Guide provides independent medical navigation and coordination.' }}
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 Medi-Guide Ethiopia. All Rights Reserved.</span>
+        <span>Confidential Healthcare Navigation Platform</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="mobile-bottom-bar" aria-label="Mobile Navigation">
+    <a routerLink="/">
+      <mat-icon>home</mat-icon>
+      <span>{{ i18n.t('nav.home') }}</span>
+    </a>
+    <a routerLink="/about" class="active">
+      <mat-icon>info</mat-icon>
+      <span>{{ i18n.t('nav.about') }}</span>
+    </a>
+    <a routerLink="/" fragment="services">
+      <mat-icon>medical_services</mat-icon>
+      <span>{{ i18n.t('nav.services') }}</span>
+    </a>
+    <a routerLink="/" fragment="how-it-works">
+      <mat-icon>checklist</mat-icon>
+      <span>{{ i18n.t('nav.howItWorks') }}</span>
+    </a>
+    <a routerLink="/contact">
+      <mat-icon>contact_support</mat-icon>
+      <span>{{ i18n.t('nav.contact') }}</span>
+    </a>
+  </nav>
+</div>

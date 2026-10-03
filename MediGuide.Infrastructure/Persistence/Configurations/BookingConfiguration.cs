@@ -32,6 +32,14 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .HasForeignKey(x => x.AgentId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasOne(x => x.ReferredToAgent)
+            .WithMany()
+            .HasForeignKey(x => x.ReferredToAgentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Property(x => x.ReferralReason).HasMaxLength(250);
+        builder.Property(x => x.ReferralClinicalNotes).HasMaxLength(2000);
+
         builder.HasOne(x => x.Payment)
             .WithOne(p => p.Booking)
             .HasForeignKey<Payment>(p => p.BookingId);

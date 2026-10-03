@@ -1,128 +1,612 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+/* ==========================================================
+   APP HEADER & UNIFIED NAVBAR
+========================================================== */
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 68px;
+  background: var(--app-header-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--app-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.header-container {
+  max-width: 1400px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.9rem 1.5rem;
-  background: linear-gradient(90deg, #0b5ed7 0%, #0d47a1 100%);
-  color: #fff;
-  box-shadow: 0 4px 18px rgba(13, 71, 161, 0.18);
+  gap: 20px;
 }
 
-.brand {
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  color: #fff;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.nav-links {
+/* ==========================================================
+   BRAND LOCKUP (Emblem + Crisp Typography - Homepage Style)
+========================================================== */
+.brand-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-left: 1rem;
-  flex-wrap: wrap;
-}
-
-.nav-links a {
-  color: rgba(255, 255, 255, 0.92);
+  gap: 12px;
   text-decoration: none;
-  padding: 0.5rem 0.8rem;
-  border-radius: 999px;
-  font-weight: 500;
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+  }
+
+  .brand-emblem-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(8, 127, 140, 0.2);
+    flex-shrink: 0;
+
+    .emblem-img {
+      width: 27px;
+      height: 27px;
+      object-fit: contain;
+    }
+  }
+
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: var(--app-text);
+    }
+
+    .brand-sub {
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      color: var(--app-accent, #0284c7);
+    }
+  }
 }
 
-.nav-links a:hover,
-.nav-links a:focus-visible,
-.nav-links a.active {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  text-decoration: none;
-  transform: translateY(-1px);
+.nav-vertical-divider {
+  width: 1px;
+  height: 26px;
+  background: var(--app-border);
+  margin: 0 10px;
+  flex-shrink: 0;
 }
 
-.user-panel {
+/* ==========================================================
+   DESKTOP NAVIGATION LINKS (Portal Items)
+========================================================== */
+.desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .portal-nav-item {
+    min-height: 38px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 10px;
+    color: var(--app-text-muted);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    transition: all 0.18s ease;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: inherit;
+    }
+
+    &:hover {
+      background: rgba(var(--app-primary-rgb), 0.08);
+      color: var(--app-primary);
+    }
+
+    &.active {
+      background: rgba(var(--app-primary-rgb), 0.12);
+      border-color: rgba(var(--app-primary-rgb), 0.25);
+      color: var(--app-primary);
+      font-weight: 700;
+    }
+  }
+}
+
+/* ==========================================================
+   HEADER ACTIONS & USER PILL
+========================================================== */
+.header-actions {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 10px;
 }
 
-.user-name {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #edf3ff;
+.action-pill-btn {
+  height: 36px;
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-color: var(--app-border) !important;
+  color: var(--app-text) !important;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+  }
 }
 
-.app-shell-main {
-  min-height: calc(100vh - 88px);
+.action-icon-btn {
+  color: var(--app-text-muted);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  transition: all 0.18s ease;
+
+  &:hover {
+    color: var(--app-primary);
+    background: rgba(var(--app-primary-rgb), 0.08);
+  }
+
+  mat-icon {
+    font-size: 21px;
+    width: 21px;
+    height: 21px;
+  }
 }
 
-.logout-button {
-  color: white !important;
-  border: 1px solid white !important;
-  background-color: transparent !important;
+/* Integrated User Profile Pill (Matching User Screenshot Aesthetic) */
+.user-pill-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 14px 4px 6px;
+  background: var(--app-surface);
+  border: 1.5px solid var(--app-border);
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   transition: all 0.2s ease;
+
+  &:hover {
+    border-color: rgba(var(--app-primary-rgb), 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .user-pill-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--app-primary-rgb), 0.15);
+    color: var(--app-primary);
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .user-pill-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+    max-width: 140px;
+
+    .user-pill-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--app-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 135px;
+    }
+
+    .user-pill-role {
+      font-size: 10.5px;
+      color: var(--app-text-muted);
+    }
+  }
+
+  .user-pill-chevron {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--app-text-muted);
+    margin-left: 2px;
+  }
 }
 
-.logout-button:hover {
-  color: white !important;
-  background-color: #b91c1c !important;
-  border-color: #b91c1c !important;
+/* User Profile Menu Dropdown */
+.user-menu-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .menu-avatar-large {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--app-primary-rgb), 0.15);
+    color: var(--app-primary);
+    font-weight: 800;
+    font-size: 18px;
+  }
+
+  .menu-user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: 14px;
+      color: var(--app-text);
+    }
+
+    small {
+      font-size: 11.5px;
+      color: var(--app-text-muted);
+    }
+
+    .menu-role-chip {
+      display: inline-block;
+      align-self: flex-start;
+      margin-top: 4px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(var(--app-primary-rgb), 0.12);
+      color: var(--app-primary);
+    }
+  }
 }
 
+/* Guest Navigation Buttons */
+.nav-auth-login {
+  color: var(--app-text) !important;
+  font-weight: 600;
+  font-size: 13.5px;
+}
 
-@media (max-width: 720px) {
-  .app-header {
-    flex-wrap: wrap;
-    padding: 0.8rem 1rem;
-  }
+.nav-auth-register {
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  font-size: 13.5px !important;
+  padding: 0 16px !important;
+  background: var(--app-primary) !important;
+  color: #ffffff !important;
+}
 
-  .nav-links {
-    order: 3;
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .user-panel {
-    margin-left: 0;
-  }
-
-  .brand {
-    font-size: 1.5rem;
-  }
-
-
-  .notif-header {
+/* Redesigned Notification Dropdown */
+.notif-dropdown-header {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
-  font-weight: 600;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  gap: 12px;
+  border-bottom: 1px solid var(--app-border);
+
+  .notif-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--app-text);
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: var(--app-primary);
+    }
+
+    strong {
+      font-size: 14px;
+      white-space: nowrap;
+    }
+  }
+
+  .mark-read-btn {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--app-primary);
+    min-width: auto;
+    padding: 3px 8px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgba(var(--app-primary-rgb), 0.08);
+    }
+  }
 }
 
-.notif-item {
+.notif-items-container {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.notif-row-btn {
+  height: auto !important;
+  min-height: 64px;
+  padding: 12px 18px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px;
+  white-space: normal !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+
+  &.unread {
+    background: rgba(var(--app-primary-rgb), 0.07) !important;
+  }
+
+  &:hover {
+    background: rgba(var(--app-primary-rgb), 0.12) !important;
+  }
+
+  .notif-avatar-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(var(--app-primary-rgb), 0.12);
+    color: var(--app-primary);
+
+    &.consultation {
+      background: rgba(2, 132, 199, 0.14);
+      color: #0284c7;
+    }
+
+    mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  .notif-text-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+
+    .notif-msg {
+      font-size: 12.5px;
+      color: var(--app-text);
+      line-height: 1.35;
+    }
+
+    .notif-date {
+      font-size: 10.5px;
+      color: var(--app-text-muted);
+    }
+  }
+}
+
+.notif-empty-state {
+  padding: 32px 16px;
+  text-align: center;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  white-space: normal;
-  line-height: 1.3;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-text-muted);
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
 }
 
-.notif-message {
-  font-size: 13px;
+.notif-dropdown-footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--app-border);
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+
+  button {
+    font-size: 11.5px;
+    color: var(--app-primary);
+  }
 }
 
-.notif-time {
-  font-size: 11px;
-  opacity: 0.6;
+/* ==========================================================
+   PORTAL BOTTOM BAR & MOBILE RESPONSIVENESS
+========================================================== */
+.portal-bottom-bar {
+  display: none;
 }
 
-button.unread .notif-message {
-  font-weight: 600;
+@media (max-width: 992px) {
+  .desktop-nav,
+  .nav-vertical-divider {
+    display: none;
+  }
+
+  .user-pill-trigger .user-pill-meta {
+    display: none;
+  }
+
+  .user-pill-trigger {
+    padding: 3px;
+    border-radius: 50%;
+  }
+
+  .user-pill-trigger .user-pill-chevron {
+    display: none;
+  }
+
+  .header-container {
+    padding: 0 16px;
+  }
+
+  .app-shell-main {
+    padding-bottom: 72px;
+  }
+
+  /* Fixed Native-like Bottom Navigation Bar on Mobile */
+  .portal-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--app-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--app-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 999;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+
+    a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      text-decoration: none;
+      color: var(--app-text-muted);
+      font-size: 10.5px;
+      font-weight: 700;
+      flex: 1;
+      height: 100%;
+      transition: color 0.15s ease;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      &.active,
+      &:hover {
+        color: var(--app-primary);
+      }
+    }
+  }
 }
+
+@media (max-width: 640px) {
+  .app-header {
+    height: 60px;
+  }
+
+  .header-container {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .brand-link {
+    gap: 8px;
+
+    .brand-emblem-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+
+      .emblem-img {
+        width: 22px;
+        height: 22px;
+      }
+    }
+
+    .brand-text {
+      .brand-title {
+        font-size: 15px;
+        letter-spacing: 0.05em;
+      }
+      .brand-sub {
+        font-size: 8px;
+        letter-spacing: 0.18em;
+      }
+    }
+  }
+
+  .header-actions {
+    gap: 6px;
+
+    .action-pill-btn.lang-toggle {
+      min-width: auto;
+      padding: 0 8px;
+      height: 32px;
+      font-size: 11px;
+      mat-icon {
+        font-size: 15px;
+        width: 15px;
+        height: 15px;
+        margin-right: 2px;
+      }
+    }
+
+    .action-icon-btn {
+      width: 34px;
+      height: 34px;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

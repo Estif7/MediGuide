@@ -1,143 +1,736 @@
-<div class="page">
-  <mat-toolbar color="primary" class="mat-elevation-z2">
-    <span>Welcome, {{ user()?.fullName }} to Admin Dashboard</span>
-  </mat-toolbar>
+<div class="admin-page">
+
+  <!-- ==========================================
+       WELCOME SECTION
+  =========================================== -->
+  <section class="welcome-section">
+    <div>
+      <span class="section-eyebrow">{{ i18n.isAmharic() ? 'የአስተዳዳሪ ፖርታል' : 'ADMINISTRATOR PORTAL' }}</span>
+      <h2>{{ i18n.t('patient.welcome') }}, {{ user()?.fullName }}</h2>
+      <p>
+        {{ i18n.isAmharic() ? 'የዛሬው የስራ እንቅስቃሴዎችና አጠቃላይ የስርዓቱ መረጃ።' : "Here's what's happening across the platform today." }}
+      </p>
+    </div>
+
+    <div class="admin-quick-actions">
+      <a routerLink="/admin/users" class="admin-action-btn">
+        <mat-icon>manage_accounts</mat-icon>
+        <span>{{ i18n.isAmharic() ? 'ተጠቃሚዎችን አስተዳድር' : 'Manage Users' }}</span>
+      </a>
+    </div>
+  </section>
+
+
+  <!-- ==========================================
+       MESSAGE
+  =========================================== -->
 
   @if (message()) {
-    <div class="message">{{ message() }}</div>
+
+    <div class="message">
+
+      <mat-icon>
+        check_circle
+      </mat-icon>
+
+      <span>
+        {{ message() }}
+      </span>
+
+    </div>
+
   }
 
-  <div class="dashboard-grid">
-    <mat-card appearance="outlined" class="summary-card">
-      <mat-card-title>Patients</mat-card-title>
-      <mat-card-content>
-        <strong>{{ patientsTotalCount() }}</strong>
-      </mat-card-content>
-    </mat-card>
 
-    <mat-card appearance="outlined" class="summary-card">
-      <mat-card-title>Agents</mat-card-title>
-      <mat-card-content>
-        <strong>{{ agentsTotalCount() }}</strong>
-      </mat-card-content>
-    </mat-card>
+  <!-- ==========================================
+       KPI CARDS
+  =========================================== -->
 
-    <mat-card appearance="outlined" class="summary-card">
-      <mat-card-title>Bookings</mat-card-title>
-      <mat-card-content>
-        <strong>{{ totalCount() }}</strong>
-      </mat-card-content>
-    </mat-card>
-  </div>
+  <section class="stats-grid">
 
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <mat-card-title>Register Agent</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="form-panel">
-        <mat-form-field appearance="outline">
-          <mat-label>Full name</mat-label>
-          <input matInput [ngModel]="agentName()" (ngModelChange)="agentName.set($event)" />
-        </mat-form-field>
+    <!-- PATIENTS -->
 
-        <mat-form-field appearance="outline">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" [ngModel]="agentEmail()" (ngModelChange)="agentEmail.set($event)" />
-        </mat-form-field>
+    <div class="stat-card">
 
-        <mat-form-field appearance="outline">
-          <mat-label>Phone</mat-label>
-          <input matInput [ngModel]="agentPhone()" (ngModelChange)="agentPhone.set($event)" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Password</mat-label>
-          <input matInput type="password" [ngModel]="agentPassword()" (ngModelChange)="agentPassword.set($event)" />
-        </mat-form-field>
-
-        <div class="actions">
-          <button mat-flat-button color="primary" type="button" (click)="registerAgent()" [disabled]="loading()">
-            @if (loading()) {
-              <mat-progress-spinner diameter="18" mode="indeterminate" />
-            }
-            {{ loading() ? 'Saving…' : 'Create Agent' }}
-          </button>
-        </div>
+      <div class="stat-icon">
+        <mat-icon>people</mat-icon>
       </div>
-    </mat-card-content>
-  </mat-card>
 
-  <div class="dashboard-grid">
-    <mat-card appearance="outlined">
-      <mat-card-header>
-        <mat-card-title>Agents</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <mat-list>
-          @for (a of agents(); track a.id) {
-            <mat-list-item>
-              <span matListItemTitle>{{ a.fullName }}</span>
-              <span matListItemLine>{{ a.email }}</span>
-            </mat-list-item>
-          } @empty {
-            <mat-list-item>No agents yet.</mat-list-item>
-          }
-        </mat-list>
-      </mat-card-content>
-    </mat-card>
+      <div class="stat-info">
 
-    <mat-card appearance="outlined">
-      <mat-card-header>
-        <mat-card-title>Patients</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <mat-list>
-          @for (p of patients(); track p.id) {
-            <mat-list-item>
-              <span matListItemTitle>{{ p.fullName }}</span>
-              <span matListItemLine>{{ p.email }}</span>
-            </mat-list-item>
-          } @empty {
-            <mat-list-item>No patients yet.</mat-list-item>
-          }
-        </mat-list>
-      </mat-card-content>
-    </mat-card>
-  </div>
+        <span>Registered Patients</span>
 
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <mat-card-title>All Bookings</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
+        <strong>
+          {{ patientsTotalCount() }}
+        </strong>
+
+      </div>
+
+      <div class="stat-label">
+        Patients
+      </div>
+
+    </div>
+
+
+    <!-- HEALTHCARE PROFESSIONALS -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon">
+        <mat-icon>medical_services</mat-icon>
+      </div>
+
+      <div class="stat-info">
+
+        <span>Healthcare Professionals</span>
+
+        <strong>
+          {{ agentsTotalCount() }}
+        </strong>
+
+      </div>
+
+      <div class="stat-label">
+        Professionals
+      </div>
+
+    </div>
+
+
+    <!-- BOOKINGS -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon">
+        <mat-icon>event_note</mat-icon>
+      </div>
+
+      <div class="stat-info">
+
+        <span>Total Bookings</span>
+
+        <strong>
+          {{ totalCount() }}
+        </strong>
+
+      </div>
+
+      <div class="stat-label">
+        Bookings
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ==========================================
+       REGISTER HEALTHCARE PROFESSIONAL
+  =========================================== -->
+
+  <section class="management-card agent-registration">
+
+    <div class="section-heading">
+
+      <div class="section-icon">
+        <mat-icon>person_add</mat-icon>
+      </div>
+
+      <div>
+        <h2>Register Healthcare Professional</h2>
+
+        <p>
+          Add a new healthcare professional to the Medi-Guide platform.
+        </p>
+      </div>
+
+    </div>
+
+
+    <div class="agent-form">
+
+      <!-- NAME -->
+
       <mat-form-field appearance="outline">
-        <mat-label>Filter by status</mat-label>
-        <mat-select [value]="statusFilter()" (selectionChange)="onStatusFilterChange($event.value)">
-          @for (opt of statusOptions; track opt.label) {
-            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-          }
-        </mat-select>
+
+        <mat-label>Full name</mat-label>
+
+        <mat-icon matPrefix>
+          person_outline
+        </mat-icon>
+
+        <input
+          matInput
+          [ngModel]="agentName()"
+          (ngModelChange)="agentName.set($event)"
+          placeholder="Enter full name"
+        />
+
       </mat-form-field>
 
-      <mat-list>
-        @for (b of bookings(); track b.id) {
-          <a class="list-item-link" [routerLink]="['/admin/bookings', b.id]">
-            <mat-list-item>
-              <span matListItemTitle>{{ b.categoryName }} · {{ b.patientName }}</span>
-              <span matListItemLine>{{ statusLabel(b.status) }} @if (b.agentName) { · {{ b.agentName }} }</span>
-            </mat-list-item>
-          </a>
-        } @empty {
-          <mat-list-item>No bookings match this filter.</mat-list-item>
-        }
-      </mat-list>
 
-      <div class="pagination">
-        <button mat-button type="button" (click)="prevPage()" [disabled]="page() <= 1">Previous</button>
-        <span>Page {{ page() }} of {{ totalPages() }} ({{ totalCount() }} total)</span>
-        <button mat-button type="button" (click)="nextPage()" [disabled]="page() >= totalPages()">Next</button>
+      <!-- EMAIL -->
+
+      <mat-form-field appearance="outline">
+
+        <mat-label>Email address</mat-label>
+
+        <mat-icon matPrefix>
+          mail_outline
+        </mat-icon>
+
+        <input
+          matInput
+          type="email"
+          [ngModel]="agentEmail()"
+          (ngModelChange)="agentEmail.set($event)"
+          placeholder="doctor@example.com"
+        />
+
+      </mat-form-field>
+
+
+      <!-- PHONE -->
+
+      <mat-form-field appearance="outline">
+
+        <mat-label>Phone number</mat-label>
+
+        <mat-icon matPrefix>
+          phone
+        </mat-icon>
+
+        <input
+          matInput
+          [ngModel]="agentPhone()"
+          (ngModelChange)="agentPhone.set($event)"
+          placeholder="+251..."
+        />
+
+      </mat-form-field>
+
+
+      <!-- PASSWORD -->
+
+      <mat-form-field appearance="outline">
+
+        <mat-label>Temporary password</mat-label>
+
+        <mat-icon matPrefix>
+          lock_outline
+        </mat-icon>
+
+        <input
+          matInput
+          type="password"
+          [ngModel]="agentPassword()"
+          (ngModelChange)="agentPassword.set($event)"
+          placeholder="Create password"
+        />
+
+      </mat-form-field>
+
+    </div>
+
+
+    <div class="form-footer">
+
+      <span class="form-hint">
+        <mat-icon>info_outline</mat-icon>
+        The healthcare professional can change their password after signing in.
+      </span>
+
+      <button
+        mat-flat-button
+        class="primary-button"
+        type="button"
+        (click)="registerAgent()"
+        [disabled]="loading()"
+      >
+
+        @if (loading()) {
+
+          <mat-progress-spinner
+            diameter="19"
+            mode="indeterminate">
+          </mat-progress-spinner>
+
+          <span>Creating...</span>
+
+        }
+
+        @else {
+          <ng-container>
+            <mat-icon>person_add</mat-icon>
+            <span>Create Healthcare Professional</span>
+          </ng-container>
+        }
+
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- ==========================================
+       AGENTS + PATIENTS
+  =========================================== -->
+
+  <section class="people-grid">
+
+
+    <!-- HEALTHCARE PROFESSIONALS -->
+
+    <div class="management-card">
+
+      <div class="section-heading">
+
+        <div class="section-icon">
+          <mat-icon>medical_services</mat-icon>
+        </div>
+
+        <div>
+          <h2>Healthcare Professionals</h2>
+
+          <p>
+            Registered healthcare professionals on the platform.
+          </p>
+        </div>
+
+        <span class="count-badge">
+          {{ agentsTotalCount() }}
+        </span>
+
       </div>
-    </mat-card-content>
-  </mat-card>
+
+
+      <app-state-panel
+        [loading]="agentsLoading()"
+        [error]="agentsError()"
+        [empty]="agents().length === 0"
+        emptyMessage="No healthcare professionals registered yet."
+        emptyIcon="medical_services"
+        [retry]="referenceData.refreshAgents.bind(referenceData)"
+      >
+
+        <div class="people-list">
+
+          @for (a of displayedAgents(); track a.id) {
+
+            <a
+              class="person-row-link"
+              [routerLink]="['/admin/users']"
+              [queryParams]="{ search: a.email, editEmail: a.email, role: 'Agent' }"
+              matTooltip="Click to view & manage this professional account"
+            >
+
+              <div class="person-avatar">
+                <mat-icon>person</mat-icon>
+              </div>
+
+              <div class="person-meta">
+                <div class="person-name-row">
+                  <strong>{{ a.fullName }}</strong>
+                  @if (a.title) {
+                    <span class="person-role-tag">{{ a.title }}</span>
+                  }
+                </div>
+                <span class="person-email">{{ a.email }}</span>
+              </div>
+
+              <mat-icon class="row-arrow">chevron_right</mat-icon>
+
+            </a>
+
+          }
+
+        </div>
+
+        <div class="people-card-footer">
+          <a
+            mat-stroked-button
+            class="show-more-btn"
+            [routerLink]="['/admin/users']"
+            [queryParams]="{ role: 'Agent' }"
+          >
+            <span>Show More Professionals ({{ agentsTotalCount() }} total)</span>
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </div>
+
+      </app-state-panel>
+
+    </div>
+
+
+    <!-- PATIENTS -->
+
+    <div class="management-card">
+
+      <div class="section-heading">
+
+        <div class="section-icon">
+          <mat-icon>people</mat-icon>
+        </div>
+
+        <div>
+          <h2>Patients</h2>
+
+          <p>
+            Registered patients on the platform.
+          </p>
+        </div>
+
+        <span class="count-badge">
+          {{ patientsTotalCount() }}
+        </span>
+
+      </div>
+
+
+      <app-state-panel
+        [loading]="patientsLoading()"
+        [error]="patientsError()"
+        [empty]="patients().length === 0"
+        emptyMessage="No patients registered yet."
+        emptyIcon="people"
+        [retry]="loadPatients.bind(this)"
+      >
+
+        <div class="people-list">
+
+          @for (p of displayedPatients(); track p.id) {
+
+            <a
+              class="person-row-link"
+              [routerLink]="['/admin/users']"
+              [queryParams]="{ search: p.email, editEmail: p.email, role: 'Patient' }"
+              matTooltip="Click to view & manage this patient account"
+            >
+
+              <div class="person-avatar">
+                <mat-icon>person</mat-icon>
+              </div>
+
+              <div class="person-meta">
+                <strong class="person-name">{{ p.fullName }}</strong>
+                <span class="person-email">{{ p.email }}</span>
+              </div>
+
+              <mat-icon class="row-arrow">chevron_right</mat-icon>
+
+            </a>
+
+          }
+
+        </div>
+
+        <div class="people-card-footer">
+          <a
+            mat-stroked-button
+            class="show-more-btn"
+            [routerLink]="['/admin/users']"
+            [queryParams]="{ role: 'Patient' }"
+          >
+            <span>Show More Patients ({{ patientsTotalCount() }} total)</span>
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </div>
+
+      </app-state-panel>
+
+    </div>
+
+  </section>
+
+
+  <!-- ==========================================
+       BOOKINGS
+  =========================================== -->
+
+  <section class="management-card bookings-section">
+
+    <div class="bookings-header">
+
+      <div class="section-heading">
+
+        <div class="section-icon">
+          <mat-icon>event_note</mat-icon>
+        </div>
+
+        <div>
+          <h2>All Bookings</h2>
+
+          <p>
+            Monitor and manage patient healthcare requests.
+          </p>
+        </div>
+
+      </div>
+
+
+      <!-- FILTER -->
+
+      <mat-form-field
+        appearance="outline"
+        class="status-filter"
+      >
+
+        <mat-label>Booking status</mat-label>
+
+        <mat-icon matPrefix>
+          filter_list
+        </mat-icon>
+
+        <mat-select
+          [value]="statusFilter()"
+          (selectionChange)="onStatusFilterChange($event.value)"
+        >
+
+          @for (opt of statusOptions; track opt.label) {
+
+            <mat-option [value]="opt.value">
+              {{ opt.label }}
+            </mat-option>
+
+          }
+
+        </mat-select>
+
+      </mat-form-field>
+
+    </div>
+
+
+    <app-state-panel
+      [loading]="bookingsLoading()"
+      [error]="bookingsError()"
+      [empty]="bookings().length === 0"
+      emptyMessage="No bookings match this filter."
+      emptyIcon="event_busy"
+      [retry]="loadBookings.bind(this)"
+    >
+
+      <div class="booking-list">
+
+        @for (b of bookings(); track b.id) {
+
+          <a
+            class="booking-row"
+            [routerLink]="['/admin/bookings', b.id]"
+          >
+
+            <!-- ICON -->
+
+            <div class="booking-icon">
+              <mat-icon>medical_services</mat-icon>
+            </div>
+
+
+            <!-- MAIN INFO -->
+
+            <div class="booking-main">
+
+              <strong>
+                {{ b.categoryName }}
+              </strong>
+
+              <span>
+                <mat-icon>person_outline</mat-icon>
+                {{ b.patientName }}
+              </span>
+
+            </div>
+
+
+            <!-- AGENT -->
+
+            <div class="booking-agent">
+
+              @if (b.agentName) {
+
+                <span class="booking-label">
+                  Assigned Healthcare Professional
+                </span>
+
+                <strong>
+                  {{ b.agentName }}
+                </strong>
+
+              }
+
+              @else {
+
+                <span class="unassigned">
+                  <mat-icon>person_off</mat-icon>
+                  Unassigned
+                </span>
+
+              }
+
+            </div>
+
+
+            <!-- STATUS -->
+
+            <div class="booking-status">
+
+              <span
+                class="status-badge"
+                [attr.data-status]="b.status"
+              >
+                {{ statusLabel(b.status) }}
+              </span>
+
+            </div>
+
+
+            <!-- AMOUNT -->
+
+            <div class="booking-amount">
+
+              <strong>
+                {{ b.amount }} ETB
+              </strong>
+
+              <mat-icon>
+                chevron_right
+              </mat-icon>
+
+            </div>
+
+          </a>
+
+        }
+
+      </div>
+
+    </app-state-panel>
+
+
+    <!-- PAGINATION -->
+
+    <div class="pagination">
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="prevPage()"
+        [disabled]="page() <= 1"
+      >
+        <mat-icon>chevron_left</mat-icon>
+        Previous
+      </button>
+
+      <span>
+        Page <strong>{{ page() }}</strong>
+        of <strong>{{ totalPages() }}</strong>
+        · {{ totalCount() }} total
+      </span>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="nextPage()"
+        [disabled]="page() >= totalPages()"
+      >
+        Next
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- ==========================================
+       PATIENT REVIEWS / TESTIMONIALS MODERATION
+  =========================================== -->
+
+  <section class="management-card testimonials-section" style="margin-top: 24px;">
+
+    <div class="section-heading">
+
+      <div class="section-icon" style="background: #fef3c7; color: #d97706;">
+        <mat-icon>star</mat-icon>
+      </div>
+
+      <div>
+        <h2>Patient Testimonials & Reviews</h2>
+        <p>Moderate patient feedback before publishing to the public homepage.</p>
+      </div>
+
+      <span class="count-badge">
+        {{ testimonials().length }}
+      </span>
+
+    </div>
+
+    @if (testimonialsLoading()) {
+      <div style="display: flex; justify-content: center; padding: 24px;">
+        <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
+      </div>
+    } @else if (testimonials().length === 0) {
+      <div style="text-align: center; padding: 32px; color: #64748b;">
+        <mat-icon style="font-size: 36px; width: 36px; height: 36px; color: #cbd5e1; margin-bottom: 8px;">rate_review</mat-icon>
+        <p style="margin: 0; font-size: 14px;">No patient reviews submitted yet.</p>
+      </div>
+    } @else {
+      <div class="testimonials-list">
+        @for (t of testimonials(); track t.id) {
+          <div class="testimonial-card">
+            <div class="testimonial-main">
+              <div class="testimonial-author-row">
+                <strong class="testimonial-patient-name">{{ t.patientName }}</strong>
+                <span class="testimonial-patient-email">({{ t.patientEmail }})</span>
+                <span class="testimonial-status-pill"
+                      [class.is-approved]="t.isApproved"
+                      [class.is-pending]="!t.isApproved">
+                  {{ t.isApproved ? 'Published' : 'Pending Approval' }}
+                </span>
+              </div>
+              <div class="testimonial-stars">
+                @for (s of [1,2,3,4,5]; track s) {
+                  <mat-icon>{{ s <= t.rating ? 'star' : 'star_border' }}</mat-icon>
+                }
+              </div>
+              <p class="testimonial-comment">"{{ t.comment }}"</p>
+            </div>
+
+            <div class="testimonial-actions">
+              @if (!t.isApproved) {
+                <button mat-flat-button class="approve-btn" (click)="approveTestimonial(t.id)">
+                  <mat-icon>check</mat-icon>
+                  Approve
+                </button>
+              }
+              <button mat-stroked-button color="warn" (click)="deleteTestimonial(t.id)">
+                <mat-icon>delete</mat-icon>
+                Remove
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </section>
+
+
+  <!-- ==========================================
+       FOOTER
+  =========================================== -->
+
+  <div class="admin-footer">
+
+    <mat-icon>verified_user</mat-icon>
+
+    <span>
+      Medi-Guide Ethiopia · Administrative Portal
+    </span>
+
+  </div>
+
 </div>

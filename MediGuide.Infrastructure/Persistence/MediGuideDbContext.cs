@@ -21,6 +21,7 @@ public class MediGuideDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<InternalNote> InternalNotes => Set<InternalNote>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Testimonial> Testimonials => Set<Testimonial>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
