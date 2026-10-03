@@ -52,7 +52,9 @@ public class AuthController : ControllerBase
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
             PreferredLanguage = dto.PreferredLanguage ?? "en",
-            DateOfBirth = dto.DateOfBirth,
+            DateOfBirth = dto.DateOfBirth.HasValue
+                ? DateTime.SpecifyKind(dto.DateOfBirth.Value, DateTimeKind.Utc)
+                : null,
             Gender = dto.Gender,
             EmergencyContactName = dto.EmergencyContactName,
             EmergencyContactPhone = dto.EmergencyContactPhone,

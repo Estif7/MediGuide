@@ -108,8 +108,20 @@ export class Register {
       },
       error: (err) => {
         this.loading.set(false);
-        const msg = Array.isArray(err.error) ? err.error.join(' ') : (err.error?.title || err.error || 'Registration failed');
-        this.error.set(typeof msg === 'string' ? msg : 'Registration failed. Please check your inputs.');
+        let msg = 'Registration failed. Please check your inputs.';
+        if (Array.isArray(err.error)) {
+          msg = err.error.join(' ');
+        } else if (typeof err.error === 'string') {
+          msg = err.error;
+        } else if (err.error?.errors) {
+          const validationMsgs = Object.values(err.error.errors).flat();
+          msg = validationMsgs.join(' ');
+        } else if (err.error?.title) {
+          msg = err.error.title;
+        } else if (err.message) {
+          msg = err.message;
+        }
+        this.error.set(msg);
       },
     });
   }

@@ -19,6 +19,9 @@ using Microsoft.OpenApi;
 using MediGuide.API.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 
+// Enable Npgsql legacy timestamp behavior so Unspecified DateTimes do not throw on PostgreSQL
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Dynamic port configuration for cloud PaaS (Render, Koyeb, Cloud Run)

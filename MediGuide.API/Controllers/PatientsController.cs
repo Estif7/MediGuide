@@ -73,7 +73,9 @@ public class PatientsController : ControllerBase
         patient.PhoneNumber = dto.PhoneNumber;
         if (!string.IsNullOrWhiteSpace(dto.PreferredLanguage))
             patient.PreferredLanguage = dto.PreferredLanguage;
-        patient.DateOfBirth = dto.DateOfBirth;
+        patient.DateOfBirth = dto.DateOfBirth.HasValue
+            ? DateTime.SpecifyKind(dto.DateOfBirth.Value, DateTimeKind.Utc)
+            : null;
         patient.Gender = dto.Gender;
         patient.EmergencyContactName = dto.EmergencyContactName;
         patient.EmergencyContactPhone = dto.EmergencyContactPhone;
@@ -113,7 +115,9 @@ public class PatientsController : ControllerBase
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
             PreferredLanguage = dto.PreferredLanguage ?? "en",
-            DateOfBirth = dto.DateOfBirth,
+            DateOfBirth = dto.DateOfBirth.HasValue
+                ? DateTime.SpecifyKind(dto.DateOfBirth.Value, DateTimeKind.Utc)
+                : null,
             Gender = dto.Gender,
             EmergencyContactName = dto.EmergencyContactName,
             EmergencyContactPhone = dto.EmergencyContactPhone,
