@@ -42,27 +42,58 @@ public class AuthController : ControllerBase
     [HttpPost("register-patient")]
     public async Task<ActionResult<AuthResponseDto>> RegisterPatient(RegisterPatientDto dto)
     {
+        // 1. Check if Identity user already exists
         if (await _userManager.FindByEmailAsync(dto.Email) is not null)
             return BadRequest("Email is already registered.");
 
-        // 1. Create domain Patient
-        var patient = new Patient
+        var existingPatient = await _context.Patients
+            .FirstOrDefaultAsync(p => p.Email == dto.Email);
+
+        Patient patient;
+
+        if (existingPatient is not null)
         {
-            FullName = dto.FullName,
-            Email = dto.Email,
-            PhoneNumber = dto.PhoneNumber,
-            PreferredLanguage = dto.PreferredLanguage ?? "en",
-            DateOfBirth = dto.DateOfBirth.HasValue
+            // If an orphaned patient record exists from a previous partial registration attempt, reuse it
+            var userLinked = await _userManager.Users.AnyAsync(u => u.PatientId == existingPatient.Id);
+            if (userLinked)
+                return BadRequest("Email is already registered.");
+
+            patient = existingPatient;
+            patient.FullName = dto.FullName;
+            patient.PhoneNumber = dto.PhoneNumber;
+            patient.PreferredLanguage = dto.PreferredLanguage ?? "en";
+            patient.DateOfBirth = dto.DateOfBirth.HasValue
                 ? DateTime.SpecifyKind(dto.DateOfBirth.Value, DateTimeKind.Utc)
-                : null,
-            Gender = dto.Gender,
-            EmergencyContactName = dto.EmergencyContactName,
-            EmergencyContactPhone = dto.EmergencyContactPhone,
-            Allergies = dto.Allergies,
-            ChronicConditions = dto.ChronicConditions,
-            CurrentMedications = dto.CurrentMedications
-        };
-        _context.Patients.Add(patient);
+                : null;
+            patient.Gender = dto.Gender;
+            patient.EmergencyContactName = dto.EmergencyContactName;
+            patient.EmergencyContactPhone = dto.EmergencyContactPhone;
+            patient.Allergies = dto.Allergies;
+            patient.ChronicConditions = dto.ChronicConditions;
+            patient.CurrentMedications = dto.CurrentMedications;
+            patient.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            patient = new Patient
+            {
+                FullName = dto.FullName,
+                Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber,
+                PreferredLanguage = dto.PreferredLanguage ?? "en",
+                DateOfBirth = dto.DateOfBirth.HasValue
+                    ? DateTime.SpecifyKind(dto.DateOfBirth.Value, DateTimeKind.Utc)
+                    : null,
+                Gender = dto.Gender,
+                EmergencyContactName = dto.EmergencyContactName,
+                EmergencyContactPhone = dto.EmergencyContactPhone,
+                Allergies = dto.Allergies,
+                ChronicConditions = dto.ChronicConditions,
+                CurrentMedications = dto.CurrentMedications
+            };
+            _context.Patients.Add(patient);
+        }
+
         await _context.SaveChangesAsync();
 
         // 2. Create Identity user linked to the Patient
@@ -77,7 +108,16 @@ public class AuthController : ControllerBase
 
         var result = await _userManager.CreateAsync(user, dto.Password);
         if (!result.Succeeded)
+        {
+            // If user creation failed (e.g. password complexity), don't leave orphaned patient if it was newly created
+            if (existingPatient is null)
+            {
+                _context.Patients.Remove(patient);
+                await _context.SaveChangesAsync();
+            }
+
             return BadRequest(result.Errors.Select(e => e.Description));
+        }
 
         // 3. Ensure role exists and assign it
         if (!await _roleManager.RoleExistsAsync("Patient"))
@@ -211,7 +251,8 @@ public class AuthController : ControllerBase
     [HttpPost("register-agent")]
     public async Task<ActionResult<AgentDto>> RegisterAgent(RegisterAgentDto dto)
     {
-        if (await _userManager.FindByEmailAsync(dto.Email) is not null)
+        if (await _userManager.FindByEmailAsync(dto.Email) is not null ||
+            await _context.Agents.AnyAsync(a => a.Email == dto.Email))
             return BadRequest("Email is already registered.");
 
         // 1. Domain Agent
@@ -238,7 +279,11 @@ public class AuthController : ControllerBase
 
         var result = await _userManager.CreateAsync(user, dto.Password);
         if (!result.Succeeded)
+        {
+            _context.Agents.Remove(agent);
+            await _context.SaveChangesAsync();
             return BadRequest(result.Errors.Select(e => e.Description));
+        }
 
         if (!await _roleManager.RoleExistsAsync("Agent"))
             await _roleManager.CreateAsync(new IdentityRole("Agent"));
